@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Interrupts</title>
+  <style>
+    html {
+      font-family: monospace;
+      font-size: 12pt;
+      line-height: 1.25;
+      color: #1a1a1a;
+      background-color: #F5F5F0;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 52em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: #F5F5F0;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: Blue;
+    }
+    a:visited {
+      color: Blue;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      background-color: #E5E5E0;
+      padding: .2em .4em;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      background-color: #E5E5E0;
+      padding: 1em;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {  background-color: #f8f8f8; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ef2929; } /* Alert */
+    code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #204a87; } /* Attribute */
+    code span.bn { color: #0000cf; } /* BaseN */
+    code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4e9a06; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #8f5902; font-style: italic; } /* Comment */
+    code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+    code span.dt { color: #204a87; } /* DataType */
+    code span.dv { color: #0000cf; } /* DecVal */
+    code span.er { color: #a40000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #0000cf; } /* Float */
+    code span.fu { color: #204a87; font-weight: bold; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+    code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+    code span.ot { color: #8f5902; } /* Other */
+    code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+    code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+    code span.ss { color: #4e9a06; } /* SpecialString */
+    code span.st { color: #4e9a06; } /* String */
+    code span.va { color: #000000; } /* Variable */
+    code span.vs { color: #4e9a06; } /* VerbatimString */
+    code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+    span {
+        opacity: 1.0;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Interrupts</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#introduction" id="toc-introduction"><span
+class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="#gpio-driver-for-sw2-using-interrupts"
+id="toc-gpio-driver-for-sw2-using-interrupts"><span
+class="toc-section-number">2</span> GPIO driver for SW2 using
+interrupts</a>
+<ul>
+<li><a href="#wait-queue-mechanism" id="toc-wait-queue-mechanism"><span
+class="toc-section-number">2.1</span> Wait queue mechanism</a></li>
+<li><a href="#associating-a-gpio-number-to-an-irq-line"
+id="toc-associating-a-gpio-number-to-an-irq-line"><span
+class="toc-section-number">2.2</span> Associating a GPIO number to an
+IRQ line</a></li>
+<li><a href="#irq-quirky-details" id="toc-irq-quirky-details"><span
+class="toc-section-number">2.3</span> IRQ quirky details</a></li>
+<li><a href="#testing-sw2" id="toc-testing-sw2"><span
+class="toc-section-number">2.4</span> Testing SW2</a></li>
+</ul></li>
+<li><a href="#performance-measurements"
+id="toc-performance-measurements"><span
+class="toc-section-number">3</span> Performance measurements</a>
+<ul>
+<li><a href="#setting-up-the-ad2-on-gpio19"
+id="toc-setting-up-the-ad2-on-gpio19"><span
+class="toc-section-number">3.1</span> Setting up the AD2 on
+GPIO19</a></li>
+<li><a href="#modifying-the-kernel-module-for-performance-auditing"
+id="toc-modifying-the-kernel-module-for-performance-auditing"><span
+class="toc-section-number">3.2</span> Modifying the kernel module for
+performance auditing</a></li>
+<li><a href="#statistical-estimations"
+id="toc-statistical-estimations"><span
+class="toc-section-number">3.3</span> Statistical estimations</a></li>
+<li><a href="#results" id="toc-results"><span
+class="toc-section-number">3.4</span> Results</a></li>
+</ul></li>
+<li><a href="#discussion" id="toc-discussion"><span
+class="toc-section-number">4</span> Discussion</a></li>
+</ul>
+</nav>
+<h1 data-number="1" id="introduction"><span
+class="header-section-number">1</span> Introduction</h1>
+<p>Interrupts can be used to implement blocking reads in character
+device drivers. Instead of polling a chosen character device
+continuously a device driver can use interrupts to pause the reading of
+its devices until some pre-established event occurs, e.g., when the
+signal on a GPIO port changes.</p>
+<p>We will first demonstrate interrupt handling within our SW2 push
+button driver. Then, using the Analog Discovery, we will assess Linux’s
+limitations with regard to latency and real-time events handling.</p>
+<h1 data-number="2" id="gpio-driver-for-sw2-using-interrupts"><span
+class="header-section-number">2</span> GPIO driver for SW2 using
+interrupts</h1>
+<p>We assume that we already have a character device driver, which
+allows reading from a character device, <code>/dev/sw2</code>,
+reflecting the state of SW2 via GPIO16.</p>
+<p>When <code>/dev/sw2</code> is read from user space using
+<code>cat</code>, the current behavior of our driver is to poll GPIO16
+and to return a continuous stream of <code>0</code>s and <code>1</code>s
+indicating whether the SW2 is pressed or released. The improved driver
+will still transfer the state of SW2 to user space, but only when a
+state change occurs, i.e. on the rising and falling edges of the
+corresponding GPIO signal.</p>
+<p>To that purpose we will use two mechanisms: wait queues and interrupt
+handling.</p>
+<h2 data-number="2.1" id="wait-queue-mechanism"><span
+class="header-section-number">2.1</span> Wait queue mechanism</h2>
+<p>We refer to the <code>Wait queue</code> section in LDDD2 p.66,
+chapter <code>Dealing with Kernel Core Helpers</code>.</p>
+<p>When the <code>read</code> system call is invoked from user space,
+the <code>read</code> callback of our driver should <em>block</em> or
+<em>sleep</em> until until some external event occurs, e.g., SW2 is
+pressed. The blocked process will be put to sleep on a <em>wait
+queue</em>.</p>
+<p>A wait queue is initialized statically using the
+<code>DECLARE_WAIT_QUEUE_HEAD</code> macro, which defines a new variable
+<code>wq</code> of type <code>struct wait_queue_head</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>DECLARE_WAIT_QUEUE_HEAD<span class="op">(</span>wq<span class="op">);</span></span></code></pre></div>
+<p>The <code>wait_queue_head</code> structure is a double linked list
+protected by a lock.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> wait_queue_head <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    spinlock_t      lock<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> list_head    head<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>When the device node is read with <code>cat /dev/sw2</code>, the
+<code>read</code> callback will immediately put itself to sleep until a
+value change is detected on the GPIO line. To achieve this, we will use
+two macros from <code>linux/wait.h</code>:
+<code>wait_event_interruptible()</code> (in the <code>read</code>
+callback) and <code>wake_up_interruptible()</code> (in the ISR).</p>
+<p>From the Linux documentation (kernel-hacking/hacking.rst), we
+read</p>
+<pre><code>Placing yourself in the wait queue is fairly complex, because you must put
+yourself in the queue before checking the condition. There is a macro to do
+this: `wait_event_interruptible()` (include/linux/wait.h). The first argument is
+the wait queue head, and the second is an expression which is evaluated; the
+macro returns 0 when this expression is true, or -ERESTARTSYS if a signal is
+received.</code></pre>
+<p>The following call to <code>wait_event_interruptible()</code> will
+block so long as <code>flag</code> is equal to <code>0</code>, where
+<code>flag</code> is a global variable defined in our kernel module:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>wait_event_interruptible<span class="op">(</span>wq<span class="op">,</span> flag <span class="op">!=</span> <span class="dv">0</span><span class="op">))</span> <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>   dev_dbg<span class="op">(</span>drv<span class="op">-&gt;</span>device<span class="op">[</span><span class="dv">0</span><span class="op">]-&gt;</span>dev<span class="op">,</span> <span class="st">&quot;A blocking read was interrupted.</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>   <span class="cf">return</span> <span class="op">-</span>ERESTARTSYS<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>flag <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span></code></pre></div>
+<p>The call to <code>wait_event_interruptible()</code> puts the
+executing process in a <code>TASK_INTERRUPTIBLE</code> state on the wait
+queue.</p>
+<p>From the documentation of <code>wait_event_interruptible()</code> in
+<code>linux/wait.h</code> we learn that the condition
+<code>flag != 0</code> will be checked each time the wait queue is woken
+up (in addition to the initial check, immediately after
+<code>wait_event_interruptible()</code> is called).</p>
+<p>The queue can be woken up through a call to one of the
+<code>wake_up_*()</code> macros from within our ISR, which is invoked
+each time an interrupt is triggered as a result of a value change on the
+GPIO pin. The <code>wake_up_interruptible()</code> is the
+<code>wake_up_*()</code> variant of choice here, since this macro wakes
+up a single process that is in interruptible sleep
+(<code>TASK_INTERRUPTIBLE</code>) on the wait queue:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>flag <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>wake_up_interruptible<span class="op">(&amp;</span>wq<span class="op">);</span></span></code></pre></div>
+<p>Right before the call to <code>wake_up_interruptible()</code>, the
+<code>flag</code> is set to 1 such that the condition,
+<code>flag != 0</code>, which the <code>read</code> callback is waiting
+on, will evaluate to <code>true</code> when the wait queue is woken up.
+<code>wake_up_interruptible()</code> has no return value.</p>
+<p>As mentionned above, <code>wait_event_interruptible()</code> places
+the process in a
+<code>TASK</code>_<strong><code>INTERRUPTIBLE</code></strong> state
+meaning that the waiting can also be interrupted by a signal,
+independently of our doing, and of whether the <code>flag</code> is
+<code>1</code> or not. If such an unexpected interruption occurs, we
+simply write a message to the kernel log and forward the return value of
+<code>wait_event_interruptible()</code>,<code>-ERESTARTSYS</code>.</p>
+<h2 data-number="2.2"
+id="associating-a-gpio-number-to-an-irq-line"><span
+class="header-section-number">2.2</span> Associating a GPIO number to an
+IRQ line</h2>
+<p>We refer to the <code>GPIO mapped to IRQ</code> section in LDDD2
+p.617. We also refer to the <code>Kernel interrupt handling</code>
+section in LDDD2 p.120, chapter
+<code>Dealing with Kernel Core Helpers</code>.</p>
+<p>Firstly, we need to associate the GPIO associated with SW2, GPIO16,
+to some IRQ by calling <code>gpio_to_irq()</code> during module
+initialization.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>err <span class="op">=</span> sw2<span class="op">-&gt;</span>irq_nr <span class="op">=</span> gpio_to_irq<span class="op">(</span>sw2<span class="op">-&gt;</span>gpio_nr<span class="op">);</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>err <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>gpio_to_irq_failed<span class="op">,</span> <span class="st">&quot;gpio_to_irq: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span></code></pre></div>
+<p>Once again, we examined the Linux sources to find the possible return
+values of <code>gpio_to_irq()</code>. The <code>gpio_to_irq()</code> is
+forwarded to <code>__ gpio_to_irq()</code>, then to
+<code>gpiod_to_irq()</code>, which is located in
+<code>drivers/gpio/gpiolib.c</code>. It returns the IRQ corresponding to
+the passed GPIO, or a negative error code.</p>
+<p>After the available IRQ number has been associated to GPIO16, we
+register an interrupt handler, the ISR, as follows:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>err <span class="op">=</span> request_irq<span class="op">(</span>sw2<span class="op">-&gt;</span>irq_nr<span class="op">,</span> irq_handler<span class="op">,</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                  IRQF_TRIGGER_RISING <span class="op">|</span> IRQF_TRIGGER_FALLING<span class="op">,</span> <span class="st">&quot;sw2_irq&quot;</span><span class="op">,</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                  NULL<span class="op">);</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>err<span class="op">)</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>request_irq_failed<span class="op">,</span> <span class="st">&quot;request_irq: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span></code></pre></div>
+<p>The <code>request_irq()</code> function takes the following
+parameters:</p>
+<ul>
+<li><code>sw2-&gt;irq_nr</code> is the IRQ line returned by
+<code>gpio_to_irq()</code>,</li>
+<li><code>irq_handler</code> is the ISR invoked when an interrupt is
+triggered,</li>
+<li><code>IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING</code> are
+interrupt flags; here the interrupt will be triggered on both rising and
+falling edge of the signal on GPIO16, i.e. when SW2 is pushed down and
+released.</li>
+<li><code>"sw2_irq"</code>, the name describing the interrupt in
+<code>/proc/interrupts</code>,</li>
+<li>an identifier which is optional when the interrupt line is not
+shared. It may be a pointer to additional data to be passed to the
+handler. We do not use that feature here, so the parameter is
+<code>NULL</code>.</li>
+</ul>
+<p>The definition of the ISR passed to <code>request_irq()</code> is
+shown below:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>irqreturn_t irq_handler<span class="op">(</span><span class="dt">int</span> irq<span class="op">,</span> <span class="dt">void</span> <span class="op">*</span>dev_id<span class="op">)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    flag <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    wake_up_interruptible<span class="op">(&amp;</span>wq<span class="op">);</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> IRQ_HANDLED<span class="op">;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The <code>irq_handler</code> takes the following parameters:</p>
+<ul>
+<li><code>irq</code>, the IRQ line that caused the event,</li>
+<li><code>dev_id</code>, a unique identifier or an optional pointer to a
+data structure entered in <code>request_irq()</code>.</li>
+</ul>
+<p>When the module is unloaded, <code>free_irq()</code> is called to
+remove the interrupt handler and disable the IRQ line.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>gpio_free<span class="op">(</span>sw2<span class="op">-&gt;</span>gpio_nr<span class="op">);</span></span></code></pre></div>
+<h2 data-number="2.3" id="irq-quirky-details"><span
+class="header-section-number">2.3</span> IRQ quirky details</h2>
+<p>The IRQ returned by <code>gpio_to_irq()</code> may differ even for a
+fixed GPIO number, depending on whether <code>gpio_to_irq()</code> has
+already been invoked for another GPIO. This claim can be verified as
+follows. We have developed two different drivers, one for GPIO signals
+from SW2 (GPIO16), and one for GPIO signals from the AD2 pulse generator
+(GPIO19). After a hard reset, the driver which is inserted first will
+see its GPIO number be assigned to IRQ 160. The second with IRQ 161. If
+we then remove the drivers and re-insert them in a different order, the
+respective GPIO numbers will not be assigned to new IRQ lines. So when
+IRQ 160 is first assigned to GPIO16 and IRQ 161 to GPIO19, the IRQs will
+not be reassigned when the drivers are removed and re-inserted in the
+opposite order so long as the RPi is not rebooted in the meantime.</p>
+<p>The behavior described above can be checked either by printing from
+within the driver to the kernel log the associated IRQ line, or, by
+<code>cat</code>ing <code>/proc/interrupts</code>, e.g. below we see
+that GPIO16 and GPIO19 have been associated to IRQ 160 and IRQ 161,
+respectively.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>$ cat /proc/interrupts</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>[...]</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>160:         10  pinctrl-bcm2835  16 Edge      sw2_irq</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>161:          0  pinctrl-bcm2835  19 Edge      perf_irq</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>Err:          0</span></code></pre></div>
+<p>The columns of <code>/proc/interrupt</code> are - the interrupt line
+number, - the number of interrupts serviced for that line since the
+system booted, - the interrupt controller (pinctrl-bcm2835), - the GPIO
+number associated with the interrupt line, - the trigger type (e.g. Edge
+or Level), and - the device name.</p>
+<p>Then, after a reboot and inserting the drivers in the opposite order,
+we get</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>$ cat /proc/interrupts</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>[...]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>160:          0  pinctrl-bcm2835  19 Edge      perf_irq</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>161:          1  pinctrl-bcm2835  16 Edge      sw2_irq</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>Err:          0</span></code></pre></div>
+<p>Empirical experiments show that <code>gpio_to_irq()</code>
+dynamically associates a GPIO number to an interrupt line behind the
+scene, and the association is definitive until the next reboot.
+Concretely, if <code>gpio_to_irq(X)</code> returns <code>Y</code>, then
+any subsequent call to <code>request_irq(Y,...)</code>, even from
+another driver, will associate IRQ Y to GPIO X, and the association will
+be shown in <code>/proc/interrupts</code>. Also, it is not possible to
+call <code>request_irq(Y,...)</code> if <code>Y</code> is not the return
+value of an <em>explicit</em> prior call to <code>gpio_to_irq(X)</code>.
+As a consequence, even if we <em>can</em> have two ISRs in two different
+drivers triggered by an event on a single interrupt line Y (using the
+<code>IRQF_SHARED</code> flag), we cannot force two different GPIO pins
+into sharing the same interrupt line!</p>
+<p>Assuming that we have two drivers, <code>drv1</code> and
+<code>drv2</code>, for two character devices associated with GPIO16 and
+GPIO19, respectively. Then, forcing <code>drv2</code> to use the same
+IRQ (160) as <code>drv1</code> fails tacitly. The ISR of <em>both</em>
+drivers will be invoked when changes occur on GPIO16, while all changes
+on GPIO19 will be ignored by both drivers, as documented in the
+<code>/proc/interrupts</code> output below:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>160:          1  pinctrl-bcm2835  16 Edge      drv1_irq, drv2_irq</span></code></pre></div>
+<h3 data-number="2.3.1" id="regarding-shared-irqs"><span
+class="header-section-number">2.3.1</span> Regarding shared IRQs</h3>
+<p>In the last section we tried to share a fixed IRQ line between two
+separate drivers, in which case the <code>IRQF_SHARED</code> is required
+when invoking <code>request_irq()</code> for each driver. As an example,
+if the <code>request_irq()</code> of the first driver does not use the
+<code>IRQF_SHARED</code> flag, then the <code>request_irq()</code> of
+the second driver will output an error to the kernel log</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>genirq: Flags mismatch irq 160. 00000083 (drv1_irq) vs. 00000003 (drv2_irq)</span></code></pre></div>
+<p>and <code>insmod</code> returns an error message to user space</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>$ insmod driver1.ko</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>$ insmod driver2.ko</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>insmod: ERROR: could not insert module driver2.ko: Device or resource busy</span></code></pre></div>
+<p>The numbers 0x83 and 0x03 in the kernel log correspond to the
+<code>IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING</code> flags, with and
+without the additional <code>IRQF_SHARED</code> flag, respectively.</p>
+<h3 data-number="2.3.2" id="note-a-bit-of-debugging"><span
+class="header-section-number">2.3.2</span> Note: A bit of debugging</h3>
+<p>Even though the driver seemed to work as expected, we got the
+following warning in the kernel log when <code>request_irq()</code> was
+invoked:</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>WARNING: CPU: 0 PID: 332 at drivers/gpio/gpiolib.c:3968 gpiochip_enable_irq+0xa0/0xc4</span></code></pre></div>
+<p>So let’s have a look at <code>drivers/gpio/gpiolib.c</code> at line
+3968:</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>3958    void gpiochip_enable_irq(struct gpio_chip *chip, unsigned int offset)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>3959    {</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>3960        struct gpio_desc *desc = gpiochip_get_desc(chip, offset);</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>3961    </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>3962        if (!IS_ERR(desc) &amp;&amp;</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>3963            !WARN_ON(!test_bit(FLAG_USED_AS_IRQ, &amp;desc-&gt;flags))) {</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>3964            /*</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>3965             * We must not be output when using IRQ UNLESS we are</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>3966             * open drain.</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>3967             */</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>3968            WARN_ON(test_bit(FLAG_IS_OUT, &amp;desc-&gt;flags) &amp;&amp;</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>3969                !test_bit(FLAG_OPEN_DRAIN, &amp;desc-&gt;flags));</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>3970            set_bit(FLAG_IRQ_IS_ENABLED, &amp;desc-&gt;flags);</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>3971        }</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>3972    }</span></code></pre></div>
+<p>So the problem seems to be that <em>“We must not be output when using
+IRQ UNLESS we are open drain”</em>.</p>
+<p>And indeed, we found out that we had set up the GPIO line for SW2 to
+be an <em>output</em> (<code>gpio_direction_output()</code>) rather than
+an <em>input</em> (<code>gpio_direction_input()</code>)!</p>
+<p>Also in the Linux documentation
+<code>Documentation/gpio/gpio-legacy.txt</code> is is explicitly stated
+that “It is an unchecked error to use a GPIO number that wasn’t set up
+as an input using gpio_direction_input() […]”.</p>
+<p>Problem solved!</p>
+<h2 data-number="2.4" id="testing-sw2"><span
+class="header-section-number">2.4</span> Testing SW2</h2>
+<p>Now that we have implemented interrupt handling in our SW2 driver, we
+can demonstrate how the GPIO value is displayed to the console, only
+when the push button is pressed or released.</p>
+<figure id="fig:sw2_demo.gif">
+<img src="images/sw2_demo.gif" style="width:100.0%"
+alt="Figure 1: SW2 demo." />
+<figcaption aria-hidden="true">Figure 1: SW2 demo.</figcaption>
+</figure>
+<h1 data-number="3" id="performance-measurements"><span
+class="header-section-number">3</span> Performance measurements</h1>
+<p>We will use the Analog Discovery’s waveform generator to assess the
+speed at which our kernel module can process GPIO signals.</p>
+<h2 data-number="3.1" id="setting-up-the-ad2-on-gpio19"><span
+class="header-section-number">3.1</span> Setting up the AD2 on
+GPIO19</h2>
+<p>We connect <code>W1</code> (yellow wire) to <code>IO19</code> and a
+ground wire to <code>GND</code> on J3 as shown below.</p>
+<figure id="fig:gpio19">
+<img src="images/gpio19.png" style="width:70.0%"
+alt="Figure 2: Connection" />
+<figcaption aria-hidden="true">Figure 2: Connection</figcaption>
+</figure>
+<p>We generate a sequence of pulse signals using the waveform generator
+with the configuration shown below.</p>
+<figure id="fig:wavegen_pulse">
+<img src="images/wavegen_pulse.png" style="width:100.0%"
+alt="Figure 3: Connection" />
+<figcaption aria-hidden="true">Figure 3: Connection</figcaption>
+</figure>
+<h2 data-number="3.2"
+id="modifying-the-kernel-module-for-performance-auditing"><span
+class="header-section-number">3.2</span> Modifying the kernel module for
+performance auditing</h2>
+<p>The kernel module from the previous section remains for the most part
+unchanged.</p>
+<p>The GPIO number is changed to <code>19</code> corresponding to the
+pin to which the waveform generator is connected
+(<code>IO19</code>).</p>
+<p>The <code>request_irq()</code> is modified such that the ISR is only
+called on rising edges.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>err <span class="op">=</span> request_irq<span class="op">(</span>sw2<span class="op">-&gt;</span>irq_nr<span class="op">,</span> my_handler<span class="op">,</span> IRQF_TRIGGER_RISING<span class="op">,</span> <span class="st">&quot;perf_irq&quot;</span><span class="op">,</span> NULL<span class="op">);</span></span></code></pre></div>
+<p>We add a counter in the ISR. The counter is incremented right after
+the GPIO value is read in the ISR and before the waiting
+<code>read</code> is woken up.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>irqreturn_t irq_handler<span class="op">(</span><span class="dt">int</span> irq<span class="op">,</span> <span class="dt">void</span> <span class="op">*</span>dev_id<span class="op">)</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    isr_gpio_value <span class="op">=</span> gpio_get_value<span class="op">(</span>drv<span class="op">-&gt;</span>device<span class="op">[</span><span class="dv">0</span><span class="op">]-&gt;</span>gpio_nr<span class="op">);</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    isr_counter<span class="op">++;</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    flag <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    wake_up_interruptible<span class="op">(&amp;</span>wq<span class="op">);</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> IRQ_HANDLED<span class="op">;</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Another counter is incremented in <code>read</code> right after the
+GPIO value is read a second time.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">((</span>value <span class="op">=</span> gpio_get_value<span class="op">(</span>drv<span class="op">-&gt;</span>device<span class="op">[</span><span class="dv">0</span><span class="op">]-&gt;</span>gpio_nr<span class="op">))</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>read_counter<span class="op">++;</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>isr_gpio_value <span class="op">!=</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    isr_counter_fail<span class="op">++;</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>value <span class="op">!=</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    read_counter_fail<span class="op">++;</span></span></code></pre></div>
+<p>The two counters <code>isr_counter_fail</code> and
+<code>read_counter_fail</code> count the number of times the GPIO value
+was <code>0</code> when read in the ISR and in the <code>read</code>
+callback, respectively.</p>
+<p>So <code>isr_counter_fail / isr_counter</code> and
+<code>read_counter_fail / read_counter</code> are the proportion of
+<em>missed</em> GPIO reads in the ISR and in the <code>read</code>
+callback, respectively. We have set up the signal frequency such that
+<code>isr_counter</code> should be equal <code>read_counter</code>. It
+is meant as a sanity check to ensure that each pair of successive reads
+from the ISR and from the <code>read</code> callback are isolated from
+each other.</p>
+<p>Finally a summary of the statistics is returned to user space.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>len <span class="op">=</span> snprintf<span class="op">(</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    kbuf<span class="op">,</span> len<span class="op">,</span> <span class="st">&quot;</span><span class="sc">\r</span><span class="st">[</span><span class="sc">%i</span><span class="st"> </span><span class="sc">%i</span><span class="st"> </span><span class="sc">%i</span><span class="st"> </span><span class="sc">%i</span><span class="st">] </span><span class="sc">%i</span><span class="st"> </span><span class="sc">%i</span><span class="st">&quot;</span><span class="op">,</span> isr_counter_fail<span class="op">,</span> read_counter_fail<span class="op">,</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    read_counter<span class="op">,</span> isr_counter<span class="op">,</span> isr_gpio_value<span class="op">,</span> value<span class="op">);</span></span></code></pre></div>
+<h3 data-number="3.2.1" id="threaded-irq-handler"><span
+class="header-section-number">3.2.1</span> Threaded IRQ handler</h3>
+<p>We developed a second version of the driver, using a threaded
+interrupt handler. The handler of the previous version is split in two
+halves.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>err <span class="op">=</span> request_threaded_irq<span class="op">(</span>sw2<span class="op">-&gt;</span>irq_nr<span class="op">,</span> isr_hard<span class="op">,</span> isr_proc<span class="op">,</span> IRQF_TRIGGER_RISING<span class="op">,</span> <span class="st">&quot;my_irq&quot;</span><span class="op">,</span> NULL<span class="op">);</span></span></code></pre></div>
+<p>Like the ISR from the previous section, the top half runs in hard IRQ
+context with interrupts disabled. On a single CPU system like the RPi,
+<em>all</em> interrupts are masked while the top half is being executed.
+It cannot be interrupted by the scheduler, it must not sleep, and it
+gotta go fast. It returns <code>IRQ_WAKE_THREAD</code> to wake the
+bottom-half handler thread.</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>irqreturn_t isr_hard<span class="op">(</span><span class="dt">int</span> irq<span class="op">,</span> <span class="dt">void</span> <span class="op">*</span>dev_id<span class="op">)</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    isr_top_gpio_value <span class="op">=</span> gpio_get_value<span class="op">(</span>drv<span class="op">-&gt;</span>device<span class="op">[</span><span class="dv">0</span><span class="op">]-&gt;</span>gpio_nr<span class="op">);</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    isr_top_counter<span class="op">++;</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> IRQ_WAKE_THREAD<span class="op">;</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The bottom half runs in process context with interrupts enabled. It
+is allowed to sleep.</p>
+<p>It returns <code>IRQ_HANDLED</code> to notify that the interrupt was
+handled by this device.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>irqreturn_t isr_proc<span class="op">(</span><span class="dt">int</span> irq<span class="op">,</span> <span class="dt">void</span> <span class="op">*</span>dev_id<span class="op">)</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    isr_bottom_gpio_value <span class="op">=</span> gpio_get_value<span class="op">(</span>drv<span class="op">-&gt;</span>device<span class="op">[</span><span class="dv">0</span><span class="op">]-&gt;</span>gpio_nr<span class="op">);</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    isr_bottom_counter<span class="op">++;</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    flag <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    wake_up_interruptible<span class="op">(&amp;</span>wq<span class="op">);</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> IRQ_HANDLED<span class="op">;</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>As before we keep counters of successful reads in the top and bottom
+halves, and in <code>read</code>.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>    read_counter<span class="op">++;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>isr_top_gpio_value <span class="op">!=</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>        isr_top_counter_fail<span class="op">++;</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>isr_bottom_gpio_value <span class="op">!=</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>        isr_bottom_counter_fail<span class="op">++;</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>value <span class="op">!=</span> <span class="dv">1</span><span class="op">)</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>        read_counter_fail<span class="op">++;</span></span></code></pre></div>
+<p>We will now compare the latencies observed when using the
+non-threaded and the threaded devices drivers.</p>
+<h2 data-number="3.3" id="statistical-estimations"><span
+class="header-section-number">3.3</span> Statistical estimations</h2>
+<p>We are interested in measuring the time taken by the kernel to
+activate the ISR, run the bottom half handler, and then wake up the
+blocking <code>read</code>.</p>
+<p>The strategy is as follows. First we configure the interrupt line
+such that it triggers on the rising edge only. Then we use the AD2 to
+generate a pulse on GPIO19. The value is read in the ISRs and in the
+<code>read</code> callback. If the pulse is sufficiently wide, we
+expected the read value to be <code>1</code>. If the pulse is too short,
+however, the GPIO value may be read as a <code>0</code>.</p>
+<p>We assume that the time taken to actually read the GPIO value is
+short (it will be documented below).</p>
+<p>Assume that the waiting time, <code>T</code>, until the GPIO value is
+read follows some distribution as show below. The square wave signal
+sent to GPIO19 by the AD2 is shown as well.</p>
+<p>If the pulse is wide enough, i.e. if the signal is <code>1</code> for
+a sufficient amount of time after the interrupt is triggered, then the
+value read on the GPIO will <em>almost certainly</em> be
+<code>1</code>.</p>
+<figure id="fig:square_1">
+<img src="images/square_1.png" style="width:100.0%"
+alt="Figure 4: The support of the probability density of T is smaller than the pulse width." />
+<figcaption aria-hidden="true">Figure 4: The support of the probability
+density of <code>T</code> is smaller than the pulse width.</figcaption>
+</figure>
+<p>However, if the duration of the signal is too short, a proportion of
+reads will be zeros. In the plot below, we see that the probability of
+reading a <code>1</code> on the GPIO is equal to the area in
+<code>blue</code>, while the probability of reading a <code>0</code> is
+the area in <code>pink</code>.</p>
+<figure id="fig:square_1_0">
+<img src="images/square_1_0.png" style="width:100.0%"
+alt="Figure 5: The support of the probability density of T is wider than the pulse." />
+<figcaption aria-hidden="true">Figure 5: The support of the probability
+density of <code>T</code> is wider than the pulse.</figcaption>
+</figure>
+<p>If the falling edge is at, say, <code>x=60</code>, then another
+formulation of the last statement is that the probability that
+<code>T</code> is smaller than <code>60</code> is the area of the blue
+region. Hence, this probability can be estimated by counting the
+relative occurrences of <code>1</code> and <code>0</code> read on the
+GPIO pin when an interrupt is triggered.</p>
+<pre><code>P(T &gt; x) &lt;- number of `0` read on GPIO19  /  total number of reads</code></pre>
+<p>Assume that the pulse width is <code>x</code> μs. Then, if the GPIO
+value read in the <code>read</code> callback is still 0, we know that
+the time taken to read the GPIO value in <code>read</code> was
+necessarily greater than <code>x</code> μs, and as a consequence we
+deduce that the time taken to wake up the sleeping <code>read</code>
+must have been <em>approximately</em> greater than x as well. By
+repeating the experiment a large amount of times, we get an empirical
+approximation of the probability that waking up the sleeping
+<code>read</code> will take more than <code>x</code> μs.</p>
+<p>Repeating the above procedure for other pulse widths other than
+<code>x</code>, we get an empirical <em>survival function</em> of the
+waiting time until the sleeping <code>read</code> is woken up.</p>
+<figure id="fig:square_empirical_est">
+<img src="images/square_empirical_est.png" style="width:100.0%"
+alt="Figure 6: Estimating the empirical distribution." />
+<figcaption aria-hidden="true">Figure 6: Estimating the empirical
+distribution.</figcaption>
+</figure>
+<p>We can then fit a theoretical (right heavy-tailed) distribution to
+estimate properties of the distribution such as the average time from an
+interrupt trigger until the blocking read is woken up, or a 95%
+prediction interval of the time taken to wake up the sleeping
+thread.</p>
+<p>Note that the period of the pulse widths must always be sufficiently
+large that the probability density of <code>T</code> does not overlap
+with the next pulse, as shown below, otherwise the estimated probability
+will be biased.</p>
+<figure id="fig:square_1_0_1">
+<img src="images/square_1_0_1.png" style="width:100.0%"
+alt="Figure 7: Ones then zero." />
+<figcaption aria-hidden="true">Figure 7: Ones then zero.</figcaption>
+</figure>
+<h2 data-number="3.4" id="results"><span
+class="header-section-number">3.4</span> Results</h2>
+<p>For a non-threaded interrupt handler the empirical distributions of
+the waiting time until the GPIO is read in the ISR and in the
+<code>read</code> callback is shown below.</p>
+<figure id="fig:empirical_isr_read">
+<img src="images/empirical_isr_read.png" style="width:100.0%"
+alt="Figure 8: Empirical, isr + read." />
+<figcaption aria-hidden="true">Figure 8: Empirical, isr +
+read.</figcaption>
+</figure>
+<p>The distribution can be fitted semi-heuristically (meaning a
+combination of least-square optimization and heuristics for the
+parameter bounds) by a Fréchet distribution. The Fréchet distribution is
+asymmetric and (right) heavy-tail distribution meaning that the
+probability of observing unusually large values is much greater that for
+the normal distribution. The estimated densities are plotted as
+well.</p>
+<figure id="fig:isr_read">
+<img src="images/isr_read.png" style="width:100.0%"
+alt="Figure 9: Fréchet fit" />
+<figcaption aria-hidden="true">Figure 9: Fréchet fit</figcaption>
+</figure>
+<p>Similarly, we estimated the waiting times for the threaded ISR.</p>
+<figure id="fig:empirical_top_bottom_read">
+<img src="images/empirical_top_bottom_read.png" style="width:100.0%"
+alt="Figure 10: Empirical distributions of the waiting time until the GPIO value is read in the top half (red), bottom half (blue), and read callback (black). The stippled curves are the empirical distribution of the waiting time when an additional read was made in the top half isr." />
+<figcaption aria-hidden="true">Figure 10: Empirical distributions of the
+waiting time until the GPIO value is read in the top half (red), bottom
+half (blue), and read callback (black). The stippled curves are the
+empirical distribution of the waiting time when an additional read was
+made in the top half isr.</figcaption>
+</figure>
+<p>The stippled curves show the waiting time in the bottom half and in
+the <code>read</code> callback when the GPIO read in the top half was
+skipped. So the small offset between the solid and the stippled curves
+is an estimate of the time taken to read the GPIO pin once, i.e. the
+time taken by the instruction
+<code>gpio_get_value(drv-&gt;device[0]-&gt;gpio_nr)</code> in the
+top-half ISR.</p>
+<p>Once again the empirical distribution were fitted with Fréchet
+distributions.</p>
+<figure id="fig:top_bottom_read">
+<img src="images/top_bottom_read.png" style="width:100.0%"
+alt="Figure 11: Fit Fréchet distribution to the empirical distributions of the waiting time until the GPIO value is read in the top half (red), bottom half (blue), and read callback (black). The vertical stippled lines are the empirical median of each distribution." />
+<figcaption aria-hidden="true">Figure 11: Fit Fréchet distribution to
+the empirical distributions of the waiting time until the GPIO value is
+read in the top half (red), bottom half (blue), and read callback
+(black). The vertical stippled lines are the empirical median of each
+distribution.</figcaption>
+</figure>
+<p>Finally the plot below compares all waiting times.</p>
+<figure id="fig:all_empirical">
+<img src="images/all_empirical.png" style="width:100.0%"
+alt="Figure 12: All empirical distributions" />
+<figcaption aria-hidden="true">Figure 12: All empirical
+distributions</figcaption>
+</figure>
+<h1 data-number="4" id="discussion"><span
+class="header-section-number">4</span> Discussion</h1>
+<p>In conclusion, reading the GPIO value from the bottom half rather
+than the <code>read</code> callback offers an advantage with regard to
+the potential GPIO signal frequency that our driver can handle.</p>
+<p>We’ve learnt that the wake up time in the <code>read</code> callback
+can be surprisingly long, even when the RPi was relatively idle. We can
+imagine that under heavy load, the waiting time until the GPIO pin is
+read inside the <code>read</code> callback could be quite long, maybe
+several milliseconds.</p>
+<p>The table below sums up the empirical median of the waiting time in
+microseconds until the GPIO value was read in the top and bottom halves,
+and the <code>read</code> callback.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Top</th>
+<th>Bottom</th>
+<th>Read</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simple ISR</td>
+<td>33.4</td>
+<td>XXXX</td>
+<td>101.3</td>
+</tr>
+<tr>
+<td>Top-Bottom halves</td>
+<td>XXXX</td>
+<td>85.4</td>
+<td>134.9</td>
+</tr>
+<tr>
+<td>Top-Bottom halves (w. top read)</td>
+<td>32.7</td>
+<td>88.1</td>
+<td>138.7</td>
+</tr>
+</tbody>
+</table>
+<p>It is important to note that the distributional tails of the waiting
+times, in particular for the bottom half and the <code>read</code>
+callback, are quite heavy, such that the empirical medians say little
+about the worst case waiting time, which can be an order of magnitude
+(or even two!) larger than the medians.</p>
+</body>
+</html>

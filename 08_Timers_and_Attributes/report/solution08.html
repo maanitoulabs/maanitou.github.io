@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Attributes and timers</title>
+  <style>
+    html {
+      font-family: monospace;
+      font-size: 12pt;
+      line-height: 1.25;
+      color: #1a1a1a;
+      background-color: #F5F5F0;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 52em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: #F5F5F0;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: Blue;
+    }
+    a:visited {
+      color: Blue;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      background-color: #E5E5E0;
+      padding: .2em .4em;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      background-color: #E5E5E0;
+      padding: 1em;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {  background-color: #f8f8f8; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ef2929; } /* Alert */
+    code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #204a87; } /* Attribute */
+    code span.bn { color: #0000cf; } /* BaseN */
+    code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4e9a06; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #8f5902; font-style: italic; } /* Comment */
+    code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+    code span.dt { color: #204a87; } /* DataType */
+    code span.dv { color: #0000cf; } /* DecVal */
+    code span.er { color: #a40000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #0000cf; } /* Float */
+    code span.fu { color: #204a87; font-weight: bold; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+    code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+    code span.ot { color: #8f5902; } /* Other */
+    code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+    code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+    code span.ss { color: #4e9a06; } /* SpecialString */
+    code span.st { color: #4e9a06; } /* String */
+    code span.va { color: #000000; } /* Variable */
+    code span.vs { color: #4e9a06; } /* VerbatimString */
+    code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+    span {
+        opacity: 1.0;
+        #font-size: 12pt;
+    }
+
+    img {
+      # Border around images;
+      # padding:            0px;
+      border:             2px solid #333;
+      #background-color:   #F0F;
+      #color:              #000;
+      #height:             12em;
+      #float:              right;
+      #clear:              right;
+      #margin-left:        1em;
+      #margin-bottom:      1em;
+    }
+
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Attributes and timers</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#introduction" id="toc-introduction"><span
+class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="#attributes" id="toc-attributes"><span
+class="toc-section-number">2</span> Attributes</a>
+<ul>
+<li><a href="#definition-of-device-attributes"
+id="toc-definition-of-device-attributes"><span
+class="toc-section-number">2.1</span> Definition of device
+attributes</a></li>
+<li><a href="#populating-the-array" id="toc-populating-the-array"><span
+class="toc-section-number">2.2</span> Populating the array</a></li>
+<li><a href="#definition-of-the-attribute-group"
+id="toc-definition-of-the-attribute-group"><span
+class="toc-section-number">2.3</span> Definition of the attribute
+group</a></li>
+<li><a href="#updating-dev_groups" id="toc-updating-dev_groups"><span
+class="toc-section-number">2.4</span> Updating dev_groups</a></li>
+<li><a href="#implementing-show-and-store"
+id="toc-implementing-show-and-store"><span
+class="toc-section-number">2.5</span> Implementing <em>show</em> and
+<em>store</em></a></li>
+</ul></li>
+<li><a href="#timers" id="toc-timers"><span
+class="toc-section-number">3</span> Timers</a>
+<ul>
+<li><a href="#timer-setup" id="toc-timer-setup"><span
+class="toc-section-number">3.1</span> Timer setup</a></li>
+<li><a href="#timer-update" id="toc-timer-update"><span
+class="toc-section-number">3.2</span> Timer update</a></li>
+<li><a href="#timer-deletion" id="toc-timer-deletion"><span
+class="toc-section-number">3.3</span> Timer deletion</a></li>
+<li><a href="#alternative-timer-update"
+id="toc-alternative-timer-update"><span
+class="toc-section-number">3.4</span> Alternative timer update</a></li>
+</ul></li>
+<li><a href="#overlays" id="toc-overlays"><span
+class="toc-section-number">4</span> Overlays</a></li>
+<li><a href="#results" id="toc-results"><span
+class="toc-section-number">5</span> Results</a>
+<ul>
+<li><a href="#blinking-the-leds" id="toc-blinking-the-leds"><span
+class="toc-section-number">5.1</span> Blinking the LEDs</a></li>
+<li><a href="#gpio19-gpio13-and-the-analog-discovery"
+id="toc-gpio19-gpio13-and-the-analog-discovery"><span
+class="toc-section-number">5.2</span> GPIO19, GPIO13, and the Analog
+Discovery</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 data-number="1" id="introduction"><span
+class="header-section-number">1</span> Introduction</h1>
+<p>We’d like to make those LEDs blink. Using timers and device
+attributes, i.e. files in SysFs, we can have full control over the
+blinking of the LEDs.</p>
+<p>We will introduce two new concepts: attributes and timers.</p>
+<p>Kernel <em>timers</em> will be used to toggle some GPIO outputs.
+<em>Attributes</em> will be used to configure the toggling,
+<em>delay</em> and <em>state</em>, from user space.</p>
+<p>We refer to the Linux documentation for <a
+href="https://www.kernel.org/doc/html/next/driver-api/driver-model/platform.html">Platform
+Devices and Drivers</a>.</p>
+<!-- ![](images/7.png){#fig:gpio19 width=100%} -->
+<h1 data-number="2" id="attributes"><span
+class="header-section-number">2</span> Attributes</h1>
+<p>Framework-specific data structures enclose a
+driver/bus/device-datastructure, and provide custom <code>probe</code>
+and <code>remove</code> operations. These framework-specific
+<code>probe</code> and <code>remove</code> can be invoked (if non-null!)
+by using the <code>container-of</code> method on the inner
+driver/bus/device-specific attribute field, c.f. <em>Overview of the
+device model from sysfs</em> in LDDD2 p501-503.</p>
+<p>We refer to section <em>Getting deeper inside LDM</em> in LDDD2 p473,
+for a definition of <em>sysfs</em> and <em>Attributes</em>. Section
+<em>Working with non-default attributes</em> p481. Section <em>Concept
+of attribute group</em> p492 as an alternative to having to call
+sysfs_createfile() for each attribute.</p>
+<h2 data-number="2.1" id="definition-of-device-attributes"><span
+class="header-section-number">2.1</span> Definition of device
+attributes</h2>
+<p>We define the <code>gpio_toggle</code> read-write attribute.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>DEVICE_ATTR_RW<span class="op">(</span>gpio_toggle<span class="op">);</span></span></code></pre></div>
+<p><code>DEVICE_ATTR_RW</code> is a preprocessor macro defined as
+follows.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define DEVICE_ATTR_RW</span><span class="op">(</span><span class="pp">_name</span><span class="op">)</span><span class="pp"> </span><span class="op">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="kw">struct</span><span class="pp"> device_attribute dev_attr_</span><span class="op">##</span><span class="pp">_name </span><span class="op">=</span><span class="pp"> __ATTR_RW</span><span class="op">(</span><span class="pp">_name</span><span class="op">)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="pp">#define __ATTR_RW</span><span class="op">(</span><span class="pp">_name</span><span class="op">)</span><span class="pp"> __ATTR</span><span class="op">(</span><span class="pp">_name</span><span class="op">,</span><span class="pp"> </span><span class="bn">0644</span><span class="op">,</span><span class="pp"> _name</span><span class="op">##</span><span class="pp">_show</span><span class="op">,</span><span class="pp"> _name</span><span class="op">##</span><span class="pp">_store</span><span class="op">)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="pp">#define __ATTR</span><span class="op">(</span><span class="pp">_name</span><span class="op">,</span><span class="pp"> _mode</span><span class="op">,</span><span class="pp"> _show</span><span class="op">,</span><span class="pp"> _store</span><span class="op">)</span><span class="pp"> </span><span class="op">{</span><span class="pp">               </span><span class="op">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">.</span><span class="pp">attr </span><span class="op">=</span><span class="pp"> </span><span class="op">{.</span><span class="pp">name </span><span class="op">=</span><span class="pp"> __stringify</span><span class="op">(</span><span class="pp">_name</span><span class="op">),</span><span class="pp">                </span><span class="op">\</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="pp">         </span><span class="op">.</span><span class="pp">mode </span><span class="op">=</span><span class="pp"> VERIFY_OCTAL_PERMISSIONS</span><span class="op">(</span><span class="pp">_mode</span><span class="op">)</span><span class="pp"> </span><span class="op">},</span><span class="pp">     </span><span class="op">\</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">.</span><span class="pp">show   </span><span class="op">=</span><span class="pp"> _show</span><span class="op">,</span><span class="pp">                        </span><span class="op">\</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">.</span><span class="pp">store  </span><span class="op">=</span><span class="pp"> _store</span><span class="op">,</span><span class="pp">                       </span><span class="op">\</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>For our <code>gpio_toggle</code> attribute, the preprocessor macro
+invocation is substituted with</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> device_attribute dev_attr_gpio_toggle <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>attr <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>      <span class="op">.</span>name <span class="op">=</span> <span class="st">&quot;gpio_toggle&quot;</span><span class="op">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="op">.</span>mode <span class="op">=</span> VERIFY_OCTAL_PERMISSIONS<span class="op">(</span><span class="bn">0644</span><span class="op">)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="op">},</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>show <span class="op">=</span> gpio_toggle_show<span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>store <span class="op">=</span> gpio_toggle_store<span class="op">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<p>The <code>_mode</code> verification can be omitted here.</p>
+<p>The <code>delay</code> attribute can be defined similarly.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DEVICE_ATTR_RW<span class="op">(</span>gpio_delay<span class="op">);</span></span></code></pre></div>
+<p>We will implement the <code>show</code> and <code>store</code>
+operations in the next section.</p>
+<h2 data-number="2.2" id="populating-the-array"><span
+class="header-section-number">2.2</span> Populating the array</h2>
+<p>Next, we populate an array with the attributes defined above.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="kw">struct</span> attribute <span class="op">*</span>blah_attrs<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">&amp;</span>dev_attr_gpio_toggle<span class="op">.</span>attr<span class="op">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">&amp;</span>dev_attr_gpio_delay<span class="op">.</span>attr<span class="op">,</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    NULL<span class="op">,</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<h2 data-number="2.3" id="definition-of-the-attribute-group"><span
+class="header-section-number">2.3</span> Definition of the attribute
+group</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ATTRIBUTE_GROUPS<span class="op">(</span>blah<span class="op">);</span></span></code></pre></div>
+<p>The preprocessor macro is defined as follows.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define ATTRIBUTE_GROUPS</span><span class="op">(</span><span class="pp">_name</span><span class="op">)</span><span class="pp">                 </span><span class="op">\</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span><span class="pp"> </span><span class="dt">const</span><span class="pp"> </span><span class="kw">struct</span><span class="pp"> attribute_group _name</span><span class="op">##</span><span class="pp">_group </span><span class="op">=</span><span class="pp"> </span><span class="op">{</span><span class="pp">       </span><span class="op">\</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">.</span><span class="pp">attrs </span><span class="op">=</span><span class="pp"> _name</span><span class="op">##</span><span class="pp">_attrs</span><span class="op">,</span><span class="pp">                 </span><span class="op">\</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="op">};</span><span class="pp">                              </span><span class="op">\</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="pp">__ATTRIBUTE_GROUPS</span><span class="op">(</span><span class="pp">_name</span><span class="op">)</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="pp">#define __ATTRIBUTE_GROUPS</span><span class="op">(</span><span class="pp">_name</span><span class="op">)</span><span class="pp">               </span><span class="op">\</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span><span class="pp"> </span><span class="dt">const</span><span class="pp"> </span><span class="kw">struct</span><span class="pp"> attribute_group </span><span class="op">*</span><span class="pp">_name</span><span class="op">##</span><span class="pp">_groups</span><span class="op">[]</span><span class="pp"> </span><span class="op">=</span><span class="pp"> </span><span class="op">{</span><span class="pp">   </span><span class="op">\</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">&amp;</span><span class="pp">_name</span><span class="op">##</span><span class="pp">_group</span><span class="op">,</span><span class="pp">                     </span><span class="op">\</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="pp">    NULL</span><span class="op">,</span><span class="pp">                           </span><span class="op">\</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>So for the attribute group <code>blah</code>, the macro invocation
+translates into:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">const</span> <span class="kw">struct</span> attribute_group blah_group <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>attrs <span class="op">=</span> blah_attrs<span class="op">,</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">const</span> <span class="kw">struct</span> attribute_group <span class="op">*</span>blah_groups<span class="op">[]</span> <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">&amp;</span>blah_group<span class="op">,</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    NULL<span class="op">,</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<h2 data-number="2.4" id="updating-dev_groups"><span
+class="header-section-number">2.4</span> Updating dev_groups</h2>
+<p>Finally, during the <code>init</code> operation, the
+<code>dev_groups</code> field of the class created for our character
+device needs to be updated as well.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>class <span class="op">=</span> class_create<span class="op">(</span>THIS_MODULE<span class="op">,</span> drv<span class="op">-&gt;</span>class_name<span class="op">);</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">((</span>err <span class="op">=</span> IS_ERR<span class="op">(</span>drv<span class="op">-&gt;</span>class<span class="op">)))</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>class_create_failed<span class="op">,</span> <span class="st">&quot;class_create: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>class<span class="op">-&gt;</span>dev_groups <span class="op">=</span> blah_groups<span class="op">;</span></span></code></pre></div>
+<h2 data-number="2.5" id="implementing-show-and-store"><span
+class="header-section-number">2.5</span> Implementing <em>show</em> and
+<em>store</em></h2>
+<h3 data-number="2.5.1" id="the-toggle-attribute"><span
+class="header-section-number">2.5.1</span> The <em>toggle</em>
+attribute</h3>
+<p>The <em>store</em> operation is shown below in a condensed version.
+We use <code>dev_get_drvdata</code> to retrieve our custom
+<code>gpio_device_info</code> structure, in which the current
+toggle-state is stored along with other information describing the
+device. It is made possible because we passed a pointer to that custom
+structure when the device was registered during the <em>probe</em>
+operation using <code>device_create()</code>.</p>
+<p>Next, the input buffer contains the string representation of the
+value which was written to the <code>toggle</code> property. That input
+string is converted to an integer value, which will be the new
+toggle-state, i.e <em>on</em> if the value is non-zero, and <em>off</em>
+if the value is zero. Two situations are of interest here:</p>
+<ol type="1">
+<li>the current toggle-state is <em>off</em> and the new state is
+<em>on</em>: we create and set up a new timer, or</li>
+<li>the current toggle-state is <em>on</em> and the new state is
+<em>off</em>: the currently active timer associated with this device
+must be deactivated and deleted.</li>
+</ol>
+<p>Finally the toggle-state is updated with the new value and we return
+the <code>size</code> of the input buffer. The <em>timer</em> parts of
+the code that we’ve omitted here will be detailed further below.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">ssize_t</span> gpio_toggle_store<span class="op">(</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> device <span class="op">*</span>pdev<span class="op">,</span> <span class="kw">struct</span> device_attribute <span class="op">*</span>attr<span class="op">,</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">char</span> <span class="op">*</span>buf<span class="op">,</span> <span class="dt">size_t</span> size<span class="op">)</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> new_toggle_state<span class="op">,</span> err<span class="op">;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    gpio_device_info <span class="op">*</span>gpio <span class="op">=</span> <span class="op">(</span>gpio_device_info <span class="op">*)</span>dev_get_drvdata<span class="op">(</span>pdev<span class="op">);</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>err <span class="op">=</span> kstrtoint<span class="op">(</span>buf<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="op">&amp;</span>new_toggle_state<span class="op">))</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        dev_err<span class="op">(</span>pdev<span class="op">,</span> <span class="st">&quot;unable to parse </span><span class="sc">%s\n</span><span class="st">&quot;</span><span class="op">,</span> buf<span class="op">);</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> err<span class="op">;</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>gpio<span class="op">-&gt;</span>toggle_state <span class="op">==</span> <span class="dv">0</span> <span class="op">&amp;&amp;</span> new_toggle_state <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">[</span> SETUP A NEW TIMER <span class="op">]</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        <span class="op">[</span> MODIFY THE NEW TIMER <span class="op">]</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>gpio<span class="op">-&gt;</span>toggle_state <span class="op">!=</span> <span class="dv">0</span> <span class="op">&amp;&amp;</span> new_toggle_state <span class="op">==</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>        <span class="op">[</span> DELETE THE TIMER <span class="op">]</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>    gpio<span class="op">-&gt;</span>toggle_state <span class="op">=</span> new_toggle_state<span class="op">;</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> size<span class="op">;</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The <code>show</code> function is almost trivial since its only
+purpose is to return a string representation of the the
+toggle-state.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">ssize_t</span> gpio_toggle_show<span class="op">(</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> device <span class="op">*</span>pdev<span class="op">,</span> <span class="kw">struct</span> device_attribute <span class="op">*</span>attr<span class="op">,</span> <span class="dt">char</span> <span class="op">*</span>buf<span class="op">)</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    gpio_device_info <span class="op">*</span>gpio <span class="op">=</span> <span class="op">(</span>gpio_device_info <span class="op">*)</span>dev_get_drvdata<span class="op">(</span>pdev<span class="op">);</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sprintf<span class="op">(</span>buf<span class="op">,</span> <span class="st">&quot;</span><span class="sc">%i\n</span><span class="st">&quot;</span><span class="op">,</span> gpio<span class="op">-&gt;</span>toggle_state<span class="op">);</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 data-number="2.5.2" id="the-delay-attribute"><span
+class="header-section-number">2.5.2</span> The <em>delay</em>
+attribute</h3>
+<p>The <em>store</em> operation of the <em>delay</em> attribute updates
+the toggle speed of the associated LED device. Note that we let
+<code>kstrtoint()</code> update <code>gpio-&gt;toggle_delay</code> with
+the converted value (in milliseconds). If the integer convertion fails,
+the <code>toggle_delay</code> field will be left unchanged (we checked
+with the sources in <code>lib/kstrtox.c</code> :) ).</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">ssize_t</span> gpio_delay_store<span class="op">(</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> device <span class="op">*</span>pdev<span class="op">,</span> <span class="kw">struct</span> device_attribute <span class="op">*</span>attr<span class="op">,</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">const</span> <span class="dt">char</span> <span class="op">*</span>buf<span class="op">,</span> <span class="dt">size_t</span> size<span class="op">)</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> err<span class="op">;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    gpio_device_info <span class="op">*</span>gpio <span class="op">=</span> <span class="op">(</span>gpio_device_info <span class="op">*)</span>dev_get_drvdata<span class="op">(</span>pdev<span class="op">);</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>err <span class="op">=</span> kstrtoint<span class="op">(</span>buf<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="op">&amp;</span>gpio<span class="op">-&gt;</span>toggle_delay<span class="op">))</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        dev_err<span class="op">(</span>pdev<span class="op">,</span> <span class="st">&quot;unable to parse </span><span class="sc">%s\n</span><span class="st">&quot;</span><span class="op">,</span> buf<span class="op">);</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> err<span class="op">;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> size<span class="op">;</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The <em>show</em> operation of the <em>delay</em> operation is a
+clone of the <em>toggle</em> version.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="dt">static</span> <span class="dt">ssize_t</span> gpio_delay_show<span class="op">(</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> device <span class="op">*</span>dev<span class="op">,</span> <span class="kw">struct</span> device_attribute <span class="op">*</span>attr<span class="op">,</span> <span class="dt">char</span> <span class="op">*</span>buf<span class="op">)</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    gpio_device_info <span class="op">*</span>gpio <span class="op">=</span> <span class="op">(</span>gpio_device_info <span class="op">*)</span>dev_get_drvdata<span class="op">(</span>dev<span class="op">);</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sprintf<span class="op">(</span>buf<span class="op">,</span> <span class="st">&quot;</span><span class="sc">%i\n</span><span class="st">&quot;</span><span class="op">,</span> gpio<span class="op">-&gt;</span>toggle_delay<span class="op">);</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h1 data-number="3" id="timers"><span
+class="header-section-number">3</span> Timers</h1>
+<p>The timer functionality that we’ll use is described in section
+<em>Kernel timer APIs</em> of LDDD2 p.88.</p>
+<p>The <code>jiffies</code> global variable is incremented
+<code>HZ</code> times every second. The value of <code>HZ</code> can be
+retrieved as follows on the RPi:</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>$ zcat /proc/config.gz | grep CONFIG_HZ</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>[...]</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>CONFIG_HZ_1000=y</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>CONFIG_HZ=1000</span></code></pre></div>
+<p>The value of <code>HZ</code> on the RPi is 1000, so
+<code>jiffies</code> is incremented every millisecond.</p>
+<h2 data-number="3.1" id="timer-setup"><span
+class="header-section-number">3.1</span> Timer setup</h2>
+<p>When the <code>toggle</code> property of a device is changed from
+<code>off</code> to <code>on</code>, a new timer is created within the
+<code>store</code> operation, using <code>timer_setup()</code>. Our
+custom <code>gpio_device_info</code> used in the <code>probe</code> and
+<code>show</code> operations above also contains <code>timer</code> and
+<code>callback</code> fields. The <code>timer</code> field is
+initialized by <code>timer_setup()</code>. The <code>callback</code>
+function is meant to be invoked every time the timer expires. The
+<code>callback</code> field is set during the <code>probe</code>
+operation.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>timer_setup<span class="op">(&amp;</span>gpio<span class="op">-&gt;</span>timer<span class="op">,</span> gpio<span class="op">-&gt;</span>callback<span class="op">,</span> <span class="dv">0</span><span class="op">);</span></span></code></pre></div>
+<p>We will see below, in the <em>Overlays</em> section, how we chose to
+connect each of the three devices with their respective timer
+callbacks.</p>
+<h2 data-number="3.2" id="timer-update"><span
+class="header-section-number">3.2</span> Timer update</h2>
+<p>Still in <code>store</code>, immediately after a timer has been
+created, we need to set its initial expiration delay, i.e. the delay
+before the timer callback will be invoked. The value of the
+<code>delay</code> property for a given device is converted to jiffies,
+and added to the current <code>jiffies</code> values. Our new timer will
+now expire in <code>toggle_delay</code> milliseconds. Invoking
+<code>mod_timer()</code> activates the timer.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>mod_timer<span class="op">(&amp;</span>gpio<span class="op">-&gt;</span>timer<span class="op">,</span> jiffies <span class="op">+</span> msecs_to_jiffies<span class="op">(</span>gpio<span class="op">-&gt;</span>toggle_delay<span class="op">));</span></span></code></pre></div>
+<p>So long as a device’s <em>toggle</em> property is <em>on</em>, the
+associated timer is active and needs to be updated with a fresh delay
+each time the delay expires. Our driver handles three devices, LED1,
+LED2, and LED3. Each LED has its <em>toggle</em> state and
+<em>delay</em>. Our <code>gpio_device_info</code> structure has a
+<code>struct timer_list</code>, which is also the one passed to the
+<code>led_timer_callback</code>. A pointer to the containing
+<code>gpio_device_info</code> can be retrieve using the
+<code>from_timer</code> macro, which is an application of the
+<code>container_of</code> pattern.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> led_timer_callback<span class="op">(</span><span class="kw">struct</span> timer_list <span class="op">*</span>t<span class="op">)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Retrieve the containing datastructure</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    gpio_device_info <span class="op">*</span>info <span class="op">=</span> from_timer<span class="op">(</span>info<span class="op">,</span> t<span class="op">,</span> timer<span class="op">);</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Update the timer</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    mod_timer<span class="op">(&amp;</span>info<span class="op">-&gt;</span>timer<span class="op">,</span> jiffies <span class="op">+</span> msecs_to_jiffies<span class="op">(</span>info<span class="op">-&gt;</span>toggle_delay<span class="op">));</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Toggle the LED on/off</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> val <span class="op">=</span> gpio_get_value<span class="op">(</span>info<span class="op">-&gt;</span>gpio_nr<span class="op">)</span> <span class="op">?</span> <span class="dv">1</span> <span class="op">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    gpio_set_value<span class="op">(</span>info<span class="op">-&gt;</span>gpio_nr<span class="op">,</span> <span class="dv">1</span> <span class="op">-</span> val<span class="op">);</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Ideally the timer callback should be invoked every <em>delay</em>
+milliseconds. We know, however, from previous experiments with interrupt
+services routines, that the waiting time until the ISR is executed, and
+in particular its bottom half (the timer callback), can be delayed for
+an arbitrary amount of time, even milliseconds.</p>
+<p>Furthermore, the handler itself takes time to execute, so it would be
+a misconception to believe that the update method above would lead to
+the timer callback being invoked every <em>delay</em> milliseconds. So
+the method used to update the timer will certainly lead to a certain
+amount of <em>drifting</em>.</p>
+<p>As an example, assuming that the <em>delay</em> is 200 ms, the time
+between each callback invocation will be</p>
+<pre><code>200 ms + time from interrupt to callback invokation + time to execute the callback</code></pre>
+<h2 data-number="3.3" id="timer-deletion"><span
+class="header-section-number">3.3</span> Timer deletion</h2>
+<p>When the <em>toggle</em> property of a device is changed from
+<em>on</em> to <em>off</em>, the timer is released with
+<code>del_timer()</code>, which removes the timer from the <em>timer
+management queue</em>. Since our code is running on a single core RPi,
+we don’t really need to use <code>del_timer_sync</code> rather than
+<code>del_timer</code>.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>del_timer<span class="op">(&amp;</span>gpio<span class="op">-&gt;</span>timer<span class="op">)</span></span></code></pre></div>
+<h2 data-number="3.4" id="alternative-timer-update"><span
+class="header-section-number">3.4</span> Alternative timer update</h2>
+<p>As mentioned above, updating the timer with a fixed amount of jiffies
+will inevitably lead to a certain amount of drifting. An alternative
+method is shown below.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> timer_callback_corrected<span class="op">(</span><span class="kw">struct</span> timer_list <span class="op">*</span>t<span class="op">)</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    gpio_device_info <span class="op">*</span>info <span class="op">=</span> from_timer<span class="op">(</span>info<span class="op">,</span> t<span class="op">,</span> timer<span class="op">);</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">long</span> dj <span class="op">=</span> msecs_to_jiffies<span class="op">(</span>info<span class="op">-&gt;</span>toggle_delay<span class="op">);</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    info<span class="op">-&gt;</span>next_jiffies <span class="op">+=</span> dj<span class="op">;</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="op">(</span>jiffies <span class="op">&gt;</span> info<span class="op">-&gt;</span>next_jiffies<span class="op">)</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>        info<span class="op">-&gt;</span>next_jiffies <span class="op">+=</span> dj<span class="op">;</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    mod_timer<span class="op">(&amp;</span>info<span class="op">-&gt;</span>timer<span class="op">,</span> info<span class="op">-&gt;</span>next_jiffies<span class="op">);</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> val <span class="op">=</span> gpio_get_value<span class="op">(</span>info<span class="op">-&gt;</span>gpio_nr<span class="op">)</span> <span class="op">?</span> <span class="dv">1</span> <span class="op">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>    gpio_set_value<span class="op">(</span>info<span class="op">-&gt;</span>gpio_nr<span class="op">,</span> <span class="dv">1</span> <span class="op">-</span> val<span class="op">);</span></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>The <code>expires</code> parameter of <code>mod_timer()</code> is set
+to the previous <code>expires</code> values plus the ms <em>delay</em>
+converted to jiffies. If the new <code>expires</code> is already a time
+in the past, then we keep incrementing it with <em>delay</em> until it
+becomes a value in the future. As a consequence, the period of the
+toggling should be <em>delay</em>, even if it means that we have to drop
+some toggles along the way.</p>
+<h1 data-number="4" id="overlays"><span
+class="header-section-number">4</span> Overlays</h1>
+<p>There are at different approaches when defining a DT overlay for the
+three LEDS.</p>
+<ol type="1">
+<li>A single overlay with a single fragment and a single property to
+define the GPIOs,
+<code>gpios = &lt;&amp;gpio 26 1&gt;, &lt;&amp;gpio 21 1&gt;, &lt;&amp;gpio 21 1&gt;;</code>.</li>
+<li>A single overlay with three fragments, one for each GPIO.</li>
+<li>Three separate overlays that can be added and removed
+individually.</li>
+</ol>
+<p>When choosing the first approach, the <em>probe</em> operation is
+invoked only once. As a consequence the <em>probe</em> operation can
+become rather convoluted, with <code>for</code> loops to initialize each
+device, and error management becoming complex and error-prone.</p>
+<p>We choose the second approach rather than the third because we are
+not interested in inserting the LEDs separately. Moreover, each DT
+fragment triggers a separate <em>probe</em> invocation. So if adding the
+LED2 overlay fails, i.e. if the <em>probe</em> operation for LED2 ends
+up returning a negative number, then LED1 and LED3 mays still be added
+successfully. When the kernel module or the DT overlay are removed, then
+only the LED1 and LED3 fragments will be removed form the device tree,
+and the kernel will not crash trying to remove a fragment for LED2 that
+was never added properly.</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>/dts-v1/;</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>/plugin/;</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>/ {</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  compatible = &quot;brcm,bcm2835&quot;;</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  fragment@0 {</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    target-path = &quot;/&quot;;</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    __overlay__ {</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>      led1_drv: led1_drv {</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>        compatible = &quot;ase, led1&quot;;</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>        status = &quot;okay&quot;;</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>        gpios = &lt;&amp;gpio 26 1&gt;;</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>        default_output_value = &lt;0x1&gt;;</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>      };</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>  fragment@1 {</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    target-path = &quot;/&quot;;</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    __overlay__ {</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>      led2_drv: led2_drv {</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>        compatible = &quot;ase, led2&quot;;</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>        status = &quot;okay&quot;;</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>        gpios = &lt;&amp;gpio 20 1&gt;;</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>        default_output_value = &lt;0x1&gt;;</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>      };</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>  fragment@2 {</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>    target-path = &quot;/&quot;;</span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>    __overlay__ {</span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>      led3_drv: led3_drv {</span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>        compatible = &quot;ase, led3&quot;;</span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>        status = &quot;okay&quot;;</span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a>        gpios = &lt;&amp;gpio 21 1&gt;;</span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>        default_output_value = &lt;0x1&gt;;</span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a>      };</span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a>    };</span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a>};</span></code></pre></div>
+<h1 data-number="5" id="results"><span
+class="header-section-number">5</span> Results</h1>
+<h2 data-number="5.1" id="blinking-the-leds"><span
+class="header-section-number">5.1</span> Blinking the LEDs</h2>
+<p>We wrote a small script that adds a device tree overlay for the LEDS,
+inserts the driver, and finally makes the LEDs blink at different toggle
+speeds.</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">insmod</span> leds_drv.ko</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">dtoverlay</span> <span class="at">-d</span> . leds_drv.dtbo </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 200 <span class="op">&gt;</span> /sys/class/leds_class/led1/gpio_delay </span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 400 <span class="op">&gt;</span> /sys/class/leds_class/led2/gpio_delay </span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 800 <span class="op">&gt;</span> /sys/class/leds_class/led3/gpio_delay </span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 1 <span class="op">&gt;</span> /sys/class/leds_class/led1/gpio_toggle </span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 1 <span class="op">&gt;</span> /sys/class/leds_class/led2/gpio_toggle</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 1 <span class="op">&gt;</span> /sys/class/leds_class/led3/gpio_toggle</span></code></pre></div>
+<p><img src="images/blinking_leds.gif" id="fig:blinking_leds"
+style="width:90.0%" /></p>
+<h2 data-number="5.2" id="gpio19-gpio13-and-the-analog-discovery"><span
+class="header-section-number">5.2</span> GPIO19, GPIO13, and the Analog
+Discovery</h2>
+<p>Straightforward modifications to the above-described overlays allow
+us to use GPIO19 and GPIO13 of the RPi instead of the three LEDs.</p>
+<p>We will compare the two time update strategies. GPIO19 will be
+triggered using the <em>corrected</em> strategy, while GPIO13 will be
+triggered by the naive timer update strategy.</p>
+<p>GPIO19 is connected to scope 1 of the Analog Discovery, and GPIO13 is
+connected to scope 2. Both timers are set to be triggered each 200
+ms.</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 200 <span class="op">&gt;</span> /sys/class/leds_class/gpio19/gpio_delay </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 200 <span class="op">&gt;</span> /sys/class/leds_class/gpio13/gpio_delay </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 1 <span class="op">&gt;</span> /sys/class/leds_class/gpio19/gpio_toggle </span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 1 <span class="op">&gt;</span> /sys/class/leds_class/gpio13/gpio_toggle</span></code></pre></div>
+<p>As expected the signal of the <em>uncorrected</em> timer (blue)
+drifts slowly from the corrected one (orange).</p>
+<p><img src="images/gpio19_gpio13.png" id="fig:gpio19_gpio13"
+style="width:100.0%" /></p>
+<p>Figure 1 shows that the period is pretty much 200 ms while figure 2
+shows that the period is more like 208 ms.</p>
+<figure id="fig:gpio19">
+<img src="images/gpio19_eye.png" style="width:100.0%"
+alt="Figure 1: GPIO19" />
+<figcaption aria-hidden="true">Figure 1: GPIO19</figcaption>
+</figure>
+<figure id="fig:gpio13">
+<img src="images/gpio13_eye.png" style="width:100.0%"
+alt="Figure 2: GPIO13" />
+<figcaption aria-hidden="true">Figure 2: GPIO13</figcaption>
+</figure>
+</body>
+</html>
