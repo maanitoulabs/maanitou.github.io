@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Linux device drivers with GPIO</title>
+  <style>
+    html {
+      font-family: monospace;
+      font-size: 12pt;
+      line-height: 1.25;
+      color: #1a1a1a;
+      background-color: #F5F5F0;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 52em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: #F5F5F0;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: Blue;
+    }
+    a:visited {
+      color: Blue;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      background-color: #E5E5E0;
+      padding: .2em .4em;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      background-color: #E5E5E0;
+      padding: 1em;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {  background-color: #f8f8f8; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ef2929; } /* Alert */
+    code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #204a87; } /* Attribute */
+    code span.bn { color: #0000cf; } /* BaseN */
+    code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4e9a06; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #8f5902; font-style: italic; } /* Comment */
+    code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+    code span.dt { color: #204a87; } /* DataType */
+    code span.dv { color: #0000cf; } /* DecVal */
+    code span.er { color: #a40000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #0000cf; } /* Float */
+    code span.fu { color: #204a87; font-weight: bold; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+    code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+    code span.ot { color: #8f5902; } /* Other */
+    code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+    code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+    code span.ss { color: #4e9a06; } /* SpecialString */
+    code span.st { color: #4e9a06; } /* String */
+    code span.va { color: #000000; } /* Variable */
+    code span.vs { color: #4e9a06; } /* VerbatimString */
+    code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+    span {
+        opacity: 1.0;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Linux device drivers with GPIO</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#introduction" id="toc-introduction"><span
+class="toc-section-number">1</span> Introduction</a></li>
+<li><a href="#background" id="toc-background"><span
+class="toc-section-number">2</span> Background</a></li>
+<li><a href="#design-and-implementation"
+id="toc-design-and-implementation"><span
+class="toc-section-number">3</span> Design and implementation</a>
+<ul>
+<li><a href="#initialization" id="toc-initialization"><span
+class="toc-section-number">3.1</span> Initialization</a></li>
+<li><a href="#implementing-file-operations"
+id="toc-implementing-file-operations"><span
+class="toc-section-number">3.2</span> Implementing file
+operations</a></li>
+<li><a href="#building-and-transferring"
+id="toc-building-and-transferring"><span
+class="toc-section-number">3.3</span> Building and transferring</a></li>
+</ul></li>
+<li><a href="#inserting-and-removing-the-driver"
+id="toc-inserting-and-removing-the-driver"><span
+class="toc-section-number">4</span> Inserting and removing the
+driver</a></li>
+<li><a href="#testing-the-driver" id="toc-testing-the-driver"><span
+class="toc-section-number">5</span> Testing the driver</a></li>
+<li><a href="#closing-thoughts" id="toc-closing-thoughts"><span
+class="toc-section-number">6</span> Closing Thoughts</a></li>
+</ul>
+</nav>
+<h1 data-number="1" id="introduction"><span
+class="header-section-number">1</span> Introduction</h1>
+<p>We would like to control, from user space, two separate devices
+present on the ASE fHAT, namely an LED and a push button. We want to
+turn LED3 on and off by simply writing <code>0</code> or <code>1</code>
+to a character device file, say <code>/dev/led3</code>, and we want to
+known whether SW2 is pushed down by reading another device file, say
+<code>/dev/sw2</code>. The goal of this project is to create a driver
+that can handle I/O access to those two devices.</p>
+<h1 data-number="2" id="background"><span
+class="header-section-number">2</span> Background</h1>
+<p>Our driver will interact with the API of an already existing
+low-level GPIO driver. We will interact with GPIOs the legacy way.
+Documentation is found in <a
+href="https://www.kernel.org/doc/html/v5.4/driver-api/gpio/legacy.html">Legacy
+GPIO Interfaces</a>.</p>
+<p>We can find out to which GPIO ports LED3 and SW2 are connected by
+examining the ASE fHat board schematics. Combining information on
+figure 1 and figure 2 below, we deduce that SW2 is connected to GPIO16,
+and LED3 to GPIO21.</p>
+<figure id="fig:rpi_interface">
+<img src="images/rpi_interface_gpio16_gpio21.png" style="width:80.0%"
+alt="Figure 1: Schematics of the RPi interface with the ASE fHat." />
+<figcaption aria-hidden="true">Figure 1: Schematics of the RPi interface
+with the ASE fHat.</figcaption>
+</figure>
+<figure id="fig:led3_sw2" class="subfigures">
+<p><img src="images/fhat_led3.png" id="fig:fhat_led3"
+style="width:60.0%" alt="a" /> <img src="images/fhat_sw2.png"
+id="fig:fhat_sw2" style="width:38.0%" alt="b" /></p>
+<figcaption><p>Figure 2: Schematics of the LEDs and buttons on the ASE
+fHat. </p></figcaption>
+</figure>
+<h1 data-number="3" id="design-and-implementation"><span
+class="header-section-number">3</span> Design and implementation</h1>
+<p>We define a <code>driver_info</code> struct to hold information about
+a character device driver. For our device driver the struct is
+initialized as follows:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> driver_info _drv <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>name <span class="op">=</span> <span class="st">&quot;combi_drv&quot;</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>class_name <span class="op">=</span> <span class="st">&quot;combi_class&quot;</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>first_minor <span class="op">=</span> <span class="dv">7</span><span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>number_of_minors <span class="op">=</span> <span class="dv">2</span><span class="op">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>device <span class="op">=</span> <span class="op">(</span><span class="kw">struct</span> gpio_device_info <span class="op">*[</span>N_DEVICES<span class="op">]){&amp;</span>sw2_gpio<span class="op">,</span> <span class="op">&amp;</span>led3_gpio<span class="op">},</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>fops <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>open <span class="op">=</span> device_open<span class="op">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>release <span class="op">=</span> device_release<span class="op">,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>read <span class="op">=</span> device_read<span class="op">,</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>write <span class="op">=</span> device_write<span class="op">,</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">},</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>driver_info <span class="op">*</span>drv <span class="op">=</span> <span class="op">&amp;</span>_drv<span class="op">;</span></span></code></pre></div>
+<p>The different fields will be explained below in more details. Our
+driver is responsible for two devices, SW2 and LED3, which are bound to
+GPIO lines and represented by another struct,
+<code>gpio_device_info</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> gpio_device_info sw2_gpio <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>label <span class="op">=</span> <span class="st">&quot;sw2&quot;</span><span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>gpio_nr <span class="op">=</span> <span class="dv">16</span><span class="op">};</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> gpio_device_info led3_gpio <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>label <span class="op">=</span> <span class="st">&quot;led3&quot;</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>gpio_nr <span class="op">=</span> <span class="dv">21</span><span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">.</span>initial_value <span class="op">=</span> <span class="dv">1</span><span class="op">};</span></span></code></pre></div>
+<p>As mentioned above, SW2 is bound to GPIO16, and LED3 to GPIO21. The
+initial value of GPIO21 will be <code>1</code>, meaning that LED3 will
+be turned on when the module is inserted into the kernel.</p>
+<h2 data-number="3.1" id="initialization"><span
+class="header-section-number">3.1</span> Initialization</h2>
+<p>We first need to take ownership of the two GPIO lines associated with
+SW2 and LED3. The procedure for LED3 is shown below.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>gpio_device_info <span class="op">*</span>led3 <span class="op">=</span> drv<span class="op">-&gt;</span>device<span class="op">[</span><span class="dv">1</span><span class="op">];</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">((</span>err <span class="op">=</span> gpio_request<span class="op">(</span>led3<span class="op">-&gt;</span>gpio_nr<span class="op">,</span> led3<span class="op">-&gt;</span>label<span class="op">))</span> <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>led3_gpio_request_failed<span class="op">,</span> <span class="st">&quot;gpio_request: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">((</span>err <span class="op">=</span> gpio_direction_output<span class="op">(</span>led3<span class="op">-&gt;</span>gpio_nr<span class="op">,</span> led3<span class="op">-&gt;</span>initial_value<span class="op">))</span> <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>led3_gpio_direction_output_failed<span class="op">,</span> <span class="st">&quot;gpio_direction_output: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span></code></pre></div>
+<p>Here, <code>led3-&gt;gpio_nr</code> is the GPIO line number (21)
+associated with LED3, and <code>led3-&gt;label</code> is the label
+(led3) used for describing the GPIO in Sysfs, e.g. in
+<code>/sys/kernel/debug/gpio</code>. For LED3 the direction is set with
+<code>gpio_direction_output()</code> since the GPIO is used as an
+output, and an initial value is provided. We saw that
+<code>led3-&gt;initial_value</code> is initialized to <code>1</code>, so
+LED3 will be turned on as soon as the module is inserted. For SW2 the
+direction is set using <code>gpio_direction_input()</code> since the
+GPIO is used as an input (not shown here).</p>
+<p>Devices are identified uniquely by a 32-bit <em>device number</em>
+which is a concatenation of a</p>
+<ul>
+<li>12-bit <em>major number</em>, which identifies our driver
+uniquely,</li>
+<li>20-bit <em>minor number</em>, which will identify, from within the
+driver, which one of LED3 or SW2 we want to access.</li>
+</ul>
+<p>Since we do not have any preference as to which device number will
+identify our driver, we allocate a device number <em>dynamically</em>
+using <code>alloc_chrdev_region()</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>err <span class="op">=</span> alloc_chrdev_region<span class="op">(</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">&amp;</span>drv<span class="op">-&gt;</span>dev_nr<span class="op">,</span> drv<span class="op">-&gt;</span>first_minor<span class="op">,</span> drv<span class="op">-&gt;</span>number_of_minors<span class="op">,</span> drv<span class="op">-&gt;</span>name<span class="op">);</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>err <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>alloc_chrdev_region_failed<span class="op">,</span> <span class="st">&quot;alloc_chrdev_region: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span></code></pre></div>
+<p>The value returned in <code>drv-&gt;dev_nr</code> is the first device
+number (major + minor) associated with the new character device, and
+<code>drv-&gt;number_of_minors</code> is the number of consecutive minor
+numbers. Since we set <code>.first_minor = 7</code> in our
+<code>driver_info</code>, we expect that the minor numbers associated
+with SW2 and LED3 will be 7 and 8, respectively.</p>
+<p>Then we create a <em>device class</em>, which is needed when we
+create the two devices with <code>create_device()</code> below. The new
+class is visible in <code>/sys/class</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>drv<span class="op">-&gt;</span>class <span class="op">=</span> class_create<span class="op">(</span>THIS_MODULE<span class="op">,</span> drv<span class="op">-&gt;</span>class_name<span class="op">);</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">((</span>err <span class="op">=</span> IS_ERR<span class="op">(</span>drv<span class="op">-&gt;</span>class<span class="op">)))</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>class_create_failed<span class="op">,</span> <span class="st">&quot;class_create: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span></code></pre></div>
+<p>Next we initialize a character device in <code>drv-&gt;cdev</code>
+and set up its file operations with <code>drv-&gt;fops</code>. A call to
+<code>cdev_add()</code> informs the kernel to add the new device to an
+internal list.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>cdev_init<span class="op">(&amp;</span>drv<span class="op">-&gt;</span>cdev<span class="op">,</span> <span class="op">&amp;</span>drv<span class="op">-&gt;</span>fops<span class="op">);</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">((</span>err <span class="op">=</span> cdev_add<span class="op">(&amp;</span>drv<span class="op">-&gt;</span>cdev<span class="op">,</span> drv<span class="op">-&gt;</span>nr<span class="op">,</span> drv<span class="op">-&gt;</span>number_of_minors<span class="op">))</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>cdev_init_failed<span class="op">,</span> <span class="st">&quot;cdev_add: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span></code></pre></div>
+<p>Finally, we create the two devices, by registering them in Sysfs and
+making them visible in <code>/dev</code>. The code for creating the SW2
+device is shown below.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sw2<span class="op">-&gt;</span>dev <span class="op">=</span> device_create<span class="op">(</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    drv<span class="op">-&gt;</span>class<span class="op">,</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    NULL<span class="op">,</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    MKDEV<span class="op">(</span>MAJOR<span class="op">(</span>drv<span class="op">-&gt;</span>dev_nr<span class="op">),</span> sw2<span class="op">-&gt;</span>minor<span class="op">),</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    NULL<span class="op">,</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    sw2<span class="op">-&gt;</span>label<span class="op">);</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">((</span>err <span class="op">=</span> IS_ERR<span class="op">(</span>sw2<span class="op">-&gt;</span>dev<span class="op">)))</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    ERRGOTO<span class="op">(</span>sw2_device_create_failed<span class="op">,</span> <span class="st">&quot;device_create: FAIL</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">);</span></span></code></pre></div>
+<p>The <code>ERRGOTO</code> preprocessor macro is used throughout the
+whole initialization process. If an error occurs during module
+initialization, all the previous initialization steps must be undone
+before we return with an error code. The <code>ERRGOTO</code> macro
+prints an error message and <em>goes to</em> a specific label where the
+partial unrolling will be carried out.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#define ERRGOTO</span><span class="op">(</span><span class="pp">label</span><span class="op">,</span><span class="pp"> </span><span class="op">...)</span><span class="pp">  </span><span class="op">\</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="cf">do</span><span class="pp">                       </span><span class="op">\</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">{</span><span class="pp">                        </span><span class="op">\</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="pp">        pr_err</span><span class="op">(</span><span class="pp">__VA_ARGS__</span><span class="op">);</span><span class="pp"> </span><span class="op">\</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="pp">        </span><span class="cf">goto</span><span class="pp"> label</span><span class="op">;</span><span class="pp">          </span><span class="op">\</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="pp">    </span><span class="op">}</span><span class="pp"> </span><span class="cf">while</span><span class="pp"> </span><span class="op">(</span><span class="dv">0</span><span class="op">)</span></span></code></pre></div>
+<p>Below we can see the part of the code to which <code>ERRGOTO</code>
+will jump when an error occurs.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="op">[</span> initialization of the module<span class="op">...</span> <span class="op">]</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>led3_device_create_failed<span class="op">:</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    device_destroy<span class="op">(</span>drv<span class="op">-&gt;</span>class<span class="op">,</span> MKDEV<span class="op">(</span>MAJOR<span class="op">(</span>drv<span class="op">-&gt;</span>dev_nr<span class="op">),</span> sw2<span class="op">-&gt;</span>minor<span class="op">));</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>sw2_device_create_failed<span class="op">:</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    cdev_del<span class="op">(&amp;</span>drv<span class="op">-&gt;</span>cdev<span class="op">);</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>cdev_init_failed<span class="op">:</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    class_destroy<span class="op">(</span>drv<span class="op">-&gt;</span>class<span class="op">);</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>class_create_failed<span class="op">:</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    unregister_chrdev_region<span class="op">(</span>drv<span class="op">-&gt;</span>dev_nr<span class="op">,</span> drv<span class="op">-&gt;</span>number_of_minors<span class="op">);</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>alloc_chrdev_region_failed<span class="op">:</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>led3_gpio_direction_output_failed<span class="op">:</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    gpio_free<span class="op">(</span>led3<span class="op">-&gt;</span>gpio_nr<span class="op">);</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>led3_gpio_request_failed<span class="op">:</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>sw2_gpio_direction_input_failed<span class="op">:</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    gpio_free<span class="op">(</span>sw2<span class="op">-&gt;</span>gpio_nr<span class="op">);</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>sw2_gpio_request_failed<span class="op">:</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> err<span class="op">;</span></span></code></pre></div>
+<p>In practice, it can be cumbersome to verify that the error handling
+will behave as intended for all possible points of failures during the
+initialization process.</p>
+<p>Finally, when the module is removed from the kernel, each
+initialization step must be undone in the opposite order</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> N_DEVICES <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        device_destroy<span class="op">(</span>drv<span class="op">-&gt;</span>class<span class="op">,</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                       MKDEV<span class="op">(</span>MAJOR<span class="op">(</span>drv<span class="op">-&gt;</span>dev_nr<span class="op">),</span> drv<span class="op">-&gt;</span>device<span class="op">[</span>i<span class="op">]-&gt;</span>minor<span class="op">));</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    cdev_del<span class="op">(&amp;</span>drv<span class="op">-&gt;</span>cdev<span class="op">);</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    class_destroy<span class="op">(</span>drv<span class="op">-&gt;</span>class<span class="op">);</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    unregister_chrdev_region<span class="op">(</span>drv<span class="op">-&gt;</span>dev_nr<span class="op">,</span> drv<span class="op">-&gt;</span>number_of_minors<span class="op">);</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">(</span><span class="dt">int</span> i <span class="op">=</span> N_DEVICES <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> i <span class="op">&gt;=</span> <span class="dv">0</span><span class="op">;</span> i<span class="op">--)</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        gpio_free<span class="op">(</span>drv<span class="op">-&gt;</span>device<span class="op">[</span>i<span class="op">]-&gt;</span>gpio_nr<span class="op">);</span></span></code></pre></div>
+<h2 data-number="3.2" id="implementing-file-operations"><span
+class="header-section-number">3.2</span> Implementing file
+operations</h2>
+<p>A character driver can provide <code>open</code> and
+<code>release</code> callbacks that will be invoked whenever one of the
+devices, which the driver is responsible for, is opened or closed
+through the respective system calls. Our implementations of
+<code>open</code> and <code>release</code> need not do anything special
+though, and will only print a message containing the device number of
+the character device, SW2 or LED3, which is being accessed.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> device_open<span class="op">(</span><span class="kw">struct</span> inode <span class="op">*</span>node<span class="op">,</span> <span class="kw">struct</span> file <span class="op">*</span>filep<span class="op">)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    dev_dbg<span class="op">(</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>        get_device_by_minor<span class="op">(</span>drv<span class="op">,</span> MINOR<span class="op">(</span>node<span class="op">-&gt;</span>i_rdev<span class="op">))-&gt;</span>dev<span class="op">,</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;Open GPIO device [major: </span><span class="sc">%i</span><span class="st">, minor: </span><span class="sc">%i</span><span class="st">].</span><span class="sc">\n</span><span class="st">&quot;</span><span class="op">,</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        MAJOR<span class="op">(</span>node<span class="op">-&gt;</span>i_rdev<span class="op">),</span> MINOR<span class="op">(</span>node<span class="op">-&gt;</span>i_rdev<span class="op">));</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> device_release<span class="op">(</span><span class="kw">struct</span> inode <span class="op">*</span>node<span class="op">,</span> <span class="kw">struct</span> file <span class="op">*</span>filep<span class="op">)</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">// [ same as for `device_open()` ]</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Because the <code>read</code> and <code>write</code> callbacks must
+handle two different devices based on their minor numbers, we wrote a
+helper function that maps a minor number to the corresponding device.
+The function returns NULL if the <code>minor</code> parameter is
+out-of-range.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>gpio_device_info <span class="op">*</span>get_device_by_minor<span class="op">(</span>driver_info <span class="op">*</span>drv<span class="op">,</span> <span class="dt">int</span> minor<span class="op">)</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>minor <span class="op">&lt;</span> drv<span class="op">-&gt;</span>first_minor <span class="op">||</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>        minor <span class="op">&gt;=</span> drv<span class="op">-&gt;</span>first_minor <span class="op">+</span> drv<span class="op">-&gt;</span>number_of_minors<span class="op">)</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">(</span>gpio_device_info <span class="op">*)</span>NULL<span class="op">;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="op">[...]</span></span></code></pre></div>
+<p>Our implementation of the <code>read</code> callback is shown
+below.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="dt">ssize_t</span> device_read<span class="op">(</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> file <span class="op">*</span>filep<span class="op">,</span> <span class="dt">char</span> __user <span class="op">*</span>ubuf<span class="op">,</span> <span class="dt">size_t</span> count<span class="op">,</span> loff_t <span class="op">*</span>offset<span class="op">)</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> value<span class="op">,</span> len<span class="op">;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    gpio_device_info <span class="op">*</span>dev<span class="op">;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> kbuf<span class="op">[</span>BUFLEN<span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">};</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(!(</span>dev <span class="op">=</span> get_device_by_minor<span class="op">(</span>drv<span class="op">,</span> iminor<span class="op">(</span>filep<span class="op">-&gt;</span>f_inode<span class="op">))))</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">-</span>EINVAL<span class="op">;</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>value <span class="op">=</span> gpio_get_value<span class="op">(</span>dev<span class="op">-&gt;</span>gpio_nr<span class="op">))</span> <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    len <span class="op">=</span> count <span class="op">&lt;</span> BUFLEN <span class="op">?</span> count <span class="op">:</span> BUFLEN<span class="op">;</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    len <span class="op">=</span> snprintf<span class="op">(</span>kbuf<span class="op">,</span> len<span class="op">,</span> <span class="st">&quot;</span><span class="sc">%d\n</span><span class="st">&quot;</span><span class="op">,</span> value<span class="op">);</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>len <span class="op">&lt;</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> len<span class="op">;</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    len<span class="op">++;</span> <span class="co">// Include the null-terminating character.</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(</span>copy_to_user<span class="op">(</span>ubuf<span class="op">,</span> kbuf<span class="op">,</span> len<span class="op">)</span> <span class="op">!=</span> <span class="dv">0</span><span class="op">)</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">-</span>EIO<span class="op">;</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> len<span class="op">;</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>We retrieve the minor number of the read character device using
+<code>iminor(filep-&gt;f_inode)</code>. If the minor number is valid
+(and at this point, it should be) the <code>get_device_by_minor()</code>
+function returns a pointer to a <code>gpio_device_info</code> struct,
+which we defined earlier, and its <code>gpio_nr</code> property is used
+to read the current value on the corresponding GPIO line using
+<code>gpio_get_value()</code>. <code>snprintf()</code> transforms the
+read GPIO value into a string representation, which should be at most
+<code>BUFLEN</code> characters long, including the terminating null
+character. (Footnote: Surprising note regarding the return value of
+<code>snprintf()</code> in the man page: <em>” If the output was
+truncated due to this limit, then the return value is the number of
+characters (excluding the terminating null byte) <strong>which would
+have been written to the final string if enough space had been
+available</strong>. Thus, a return value of size or more means that the
+output was truncated.”</em>).</p>
+<p>By spelunking the kernel source (<code>gpio_get_value</code>,
+<code>__gpio_get_value</code>, <code>gpio_get_raw_value</code>,
+<code>gpio_d_get_raw_value</code>) we deduced that
+<code>gpio_get_value()</code> always will return a boolean value
+(<code>0</code> or <code>1</code>) or <code>-EIO</code>.</p>
+<p>If <code>value</code> is negative we return the error message.
+Otherwise <code>value</code> is either <code>0</code> or <code>1</code>,
+and there is more than enough space in the destination buffer
+(<code>kbuf</code>).</p>
+<p>After incrementing <code>len</code> to account for the terminating
+null character, we copy the stringfication of the GPIO value,
+<code>"0\n"</code> or <code>"1\n"</code>, from the kernel buffer into
+the <code>__user</code> buffer (which by the way is 4096 bytes
+long).</p>
+<p>Finally we return the length of the string written to
+<code>ubuf</code>, which, including the null character, should be
+<code>3</code>.</p>
+<p>We do <em>not</em> update the <code>offset</code> (the start position
+from which data should be read in the device node) since it does not
+seem to have any effect other than incrementing <code>offset</code> for
+each call to the <code>read</code> callback; that would not seem to be
+the right thing to do, as illustrated in the following kernel log:</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>[11638.230024] combi_class sw2: Open GPIO device [major: 239, minor: 7].</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>[11638.234307] offset: 0</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>[11638.242632] offset: 3</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>[11638.251777] offset: 6</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>[11638.259265] offset: 9</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>[11638.266611] offset: 12</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>[11638.273867] offset: 15</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>[11638.281536] offset: 18</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>[11638.288712] offset: 21</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>[11638.296384] offset: 24</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>[11638.303688] offset: 27</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>[11638.311491] offset: 30</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>...</span></code></pre></div>
+<p>Next, we implement the <code>write</code> callback.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="dt">ssize_t</span> device_write<span class="op">(</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">struct</span> file <span class="op">*</span>filep<span class="op">,</span> <span class="dt">const</span> <span class="dt">char</span> __user <span class="op">*</span>ubuf<span class="op">,</span> <span class="dt">size_t</span> count<span class="op">,</span> loff_t <span class="op">*</span>offset<span class="op">)</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> value<span class="op">,</span> ret<span class="op">;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    gpio_device_info <span class="op">*</span>dev<span class="op">;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">size_t</span> len<span class="op">;</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">unsigned</span> <span class="dt">long</span> n_not_copied<span class="op">;</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">char</span> kbuf<span class="op">[</span>BUFLEN<span class="op">]</span> <span class="op">=</span> <span class="op">{</span><span class="ch">&#39;</span><span class="sc">\0</span><span class="ch">&#39;</span><span class="op">};</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(!(</span>dev <span class="op">=</span> get_device_by_minor<span class="op">(</span>drv<span class="op">,</span> iminor<span class="op">(</span>filep<span class="op">-&gt;</span>f_inode<span class="op">))))</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="op">-</span>EINVAL<span class="op">;</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    len <span class="op">=</span> count <span class="op">&lt;</span> BUFLEN <span class="op">?</span> count <span class="op">:</span> BUFLEN <span class="op">-</span> <span class="dv">1</span><span class="op">;</span> <span class="co">// kbuf must be null-terminated</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    n_not_copied <span class="op">=</span> copy_from_user<span class="op">(</span>kbuf<span class="op">,</span> ubuf<span class="op">,</span> len<span class="op">);</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">((</span>ret <span class="op">=</span> kstrtoint<span class="op">(</span>kbuf<span class="op">,</span> <span class="dv">10</span><span class="op">,</span> <span class="op">&amp;</span>value<span class="op">))</span> <span class="op">==</span> <span class="op">-</span>ERANGE<span class="op">)</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>        dev_dbg<span class="op">(</span>dev<span class="op">-&gt;</span>dev<span class="op">,</span> <span class="st">&quot;overflow: </span><span class="sc">%s</span><span class="st">&quot;</span><span class="op">,</span> kbuf<span class="op">);</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span> <span class="cf">if</span> <span class="op">(</span>ret <span class="op">==</span> <span class="op">-</span>EINVAL<span class="op">)</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>        dev_dbg<span class="op">(</span>dev<span class="op">-&gt;</span>dev<span class="op">,</span> <span class="st">&quot;invalid value: </span><span class="sc">%s</span><span class="st">&quot;</span><span class="op">,</span> kbuf<span class="op">);</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>        dev_dbg<span class="op">(</span>dev<span class="op">-&gt;</span>dev<span class="op">,</span> <span class="st">&quot;writing </span><span class="sc">%d\n</span><span class="st">&quot;</span><span class="op">,</span> value<span class="op">);</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>        gpio_set_value<span class="op">(</span>dev<span class="op">-&gt;</span>gpio_nr<span class="op">,</span> value<span class="op">);</span> <span class="co">// returns void</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>offset <span class="op">+=</span> count<span class="op">;</span> <span class="co">// We consume the whole buffer.</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> count<span class="op">;</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>We initialize the kernel buffer <code>kbuf</code> with zeros and copy
+at most <code>BUFLEN-1</code> bytes from the user buffer as a way to
+make sure that the string finally contained in <code>kbuf</code> is
+null-terminated.</p>
+<p><code>kstrtoint</code> is defined in <code>lib/kstrtox.c</code>. It
+converts a null-terminated string (include an optional newline before
+the null) into an <code>int</code>. The size of an <code>int</code> is
+architecture dependent, but on the RPi Zero with its ARMv6, it should be
+a signed 32-bit integer, i.e. the allowed values are between
+<code>[-2147483648; 2147483647]</code>. <code>kstrtoint</code> returns
+<code>-ERANGE</code> on overflow and <code>-EINVAL</code> on parsing
+error, in which case we print an error message in the kernel log. If the
+conversion is successful we write the <code>value</code> to the GPIO
+line associated with the device we are writing to. Note that if the
+<code>value</code> is different from <code>0</code>, it will be
+converted to a <code>1</code> internally by the kernel.</p>
+<p>In figure 3 below we show which (debug) messages our
+<code>write</code> callback will print to the kernel log when different
+values are <code>echo</code>ed to <code>/dev/led3</code></p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 2147483648 <span class="op">&gt;</span> /dev/led3</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">-2147483649</span> <span class="op">&gt;</span> /dev/led3</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> xxx1 <span class="op">&gt;</span> /dev/led3</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 1xx <span class="op">&gt;</span> /dev/led3</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 0 <span class="op">&gt;</span> /dev/led3</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="at">-2147483648</span> <span class="op">&gt;</span> /dev/led3</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 2147483647 <span class="op">&gt;</span> /dev/led3</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> 1 <span class="op">&gt;</span> /dev/led3</span></code></pre></div>
+<figure id="fig:kstrtoint">
+<img src="images/kstrtoint.png" style="width:70.0%"
+alt="Figure 3: Messages printed to the kernel log when we echo both invalid and valid values to /dev/led3." />
+<figcaption aria-hidden="true">Figure 3: Messages printed to the kernel
+log when we <code>echo</code> both invalid and valid values to
+<code>/dev/led3</code>.</figcaption>
+</figure>
+<p>Finally we consume the whole input buffer, i.e. <code>count</code>
+bytes and not just <code>len</code>, such that an <code>echo</code> to
+<code>/dev/led3</code> always triggers exactly one call to the
+<code>write</code> callback, as opposed to multiple calls until the
+whole buffer is consumed, which would be the case here if the input
+buffer is larger than the kernel buffer that we use internally
+(<code>BUFLEN</code> = 64 bytes).</p>
+<h2 data-number="3.3" id="building-and-transferring"><span
+class="header-section-number">3.3</span> Building and transferring</h2>
+<p>We wrote a simple script to build and transfer our kernel module to a
+dedicated folder on the RPi.</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/sh</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> </span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="va">REMOTE_HOST</span><span class="op">=</span>root@10.9.8.2</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="va">REMOTE_INSTALL_DIR</span><span class="op">=</span>04_ldd_gpio</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-x</span> </span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="va">$REMOTE_HOST</span> <span class="st">&quot;mkdir -p </span><span class="va">$REMOTE_INSTALL_DIR</span><span class="st">&quot;</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> combi_driver.ko <span class="va">$REMOTE_HOST</span>:<span class="va">$REMOTE_INSTALL_DIR</span></span></code></pre></div>
+<p>The Makefile used for building the driver is shown below for
+completeness.</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">obj-m</span> := combi_driver.o</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ccflags-y</span> := <span class="at">-std</span><span class="op">=</span>gnu99 <span class="dt">\</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">-Wall</span> <span class="at">-Wextra</span> <span class="at">-Werror</span> <span class="dt">\</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">-Wno-unused-parameter</span> <span class="dt">\</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">-Wno-sign-compare</span> <span class="dt">\</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">-Wno-declaration-after-statement</span> </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="ex">KERNELDIR</span> <span class="pp">?</span>= ~/src/rpi-5.4.83</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="ex">all</span> default: modules</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="ex">modules</span> clean:</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="va">$(</span><span class="ex">MAKE</span><span class="va">)</span> ARCH=arm CROSS_COMPILE=arm-poky-linux-gnueabi-  <span class="at">-C</span> <span class="va">$(</span><span class="ex">KERNELDIR</span><span class="va">)</span> M=<span class="va">$(</span><span class="ex">shell</span> pwd<span class="va">)</span> <span class="va">$@</span></span></code></pre></div>
+<h1 data-number="4" id="inserting-and-removing-the-driver"><span
+class="header-section-number">4</span> Inserting and removing the
+driver</h1>
+<p>The driver is inserted using <code>insmod</code>.</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>$ insmod combi_driver.ko</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>$ dmesg</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>[   74.825551] combi_driver: loading out-of-tree module taints kernel.</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>[   74.843657] Device numbers were allocated: [major: 239, minors: 7 8].</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>[   74.843676] The combi_drv module has been inserted into the kernel.</span></code></pre></div>
+<p>We will describe in details each step of the initialization.</p>
+<p>When we take ownership of a GPIO line with
+<code>gpio_request()</code>, the corresponding entry is added to
+<code>/sys/kernel/debug/gpio</code>, where we can see whether the GPIO
+line is active. When LED3 is turned off (low), and SW2 is released
+(high), we get the following output.</p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>$ echo 0 &gt; /dev/led3</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>$ cat /sys/kernel/debug/gpio </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>gpiochip0: GPIOs 0-53, parent: platform/20200000.gpio, pinctrl-bcm2835:</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a> gpio-7   (                    |spi0 CS1            ) out hi ACTIVE LOW</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a> gpio-8   (                    |spi0 CS0            ) out hi ACTIVE LOW</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a> gpio-16  (                    |sw2                 ) in  hi </span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a> gpio-21  (                    |led3                ) out lo </span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a> gpio-47  (                    |led0                ) out lo ACTIVE LOW</span></code></pre></div>
+<p>When <code>alloc_chrdev_region()</code> is executed the name given to
+our driver, <code>combi_drv</code>, appears in <code>proc/devices</code>
+along with the allocated major number, <code>239</code>:</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cat /proc/devices <span class="kw">|</span> <span class="fu">grep</span> combi</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ex">239</span> combi_drv</span></code></pre></div>
+<p>When <code>create_class()</code> is invoked a
+<code>combi_class</code> node is created in <code>/sys/class</code>. It
+is still empty though.</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ls <span class="at">-l</span> /sys/class/combi_class/</span></code></pre></div>
+<p>When we invoke <code>device_create()</code> for LED3 and SW2, the
+corresponding nodes are created in <code>combi_class</code> and in
+<code>/dev</code>:</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>$ ls -l /sys/class/combi_class/</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>lrwxrwxrwx  1  root  root  0 Feb  7 14:03 led3 -&gt; ../../devices/virtual/combi_class/led3</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>lrwxrwxrwx  1  root  root  0 Feb  7 14:03 sw2 -&gt; ../../devices/virtual/combi_class/sw2</span></code></pre></div>
+<p>We see that SW2 and LED3 have been registered with device number
+(239,7) and (239,8), respectively (recall that we had specified that the
+first minor number should be <code>7</code>).</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>$ ls -l /dev | grep -E &#39;led3|sw2&#39;</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>crw-------  1  root  root   239, 8   Feb 7 10:51   led3</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>crw-------  1  root  root   239, 7   Feb 7 10:51   sw2</span></code></pre></div>
+<p>We turn on LED3 by <code>echo</code>ing <code>1</code> to
+<code>/dev/led3</code> as shown below.</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>$ echo 1 &gt; /dev/led3</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>$ dmesg</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>[  179.913290] combi_class led3: Open GPIO device [major: 239, minor: 8].</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>[  179.913516] combi_class led3: writing 1</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>[  179.913589] combi_class led3: Close GPIO device [major: 239, minor: 8].</span></code></pre></div>
+<p>We see that the 3 callbacks <code>open()</code>,
+<code>write()</code>, and <code>release()</code> are invoked when a new
+value is written to <code>/dev/led3</code>. Similarly, when reading from
+<code>/dev/sw2</code>, we get the following messages in the kernel
+log</p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>$ cat /dev/sw2</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>^C</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>$ dmesg</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>[  643.336990] combi_class sw2: Open GPIO device [major: 239, minor: 7].</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>[  643.904658] combi_class sw2: Close GPIO device [major: 239, minor: 7].</span></code></pre></div>
+<p>We also have the possibility to test the <code>open</code> and
+<code>release</code> callbacks in isolation by first opening
+<code>/dev/led3</code> in R/W mode into some unused file descriptor, say
+9, <code>exec 9&lt;&gt; /dev/led3</code> and then closing it again
+<code>exec 9&gt;&amp;-</code>.</p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>$ exec 9&lt;&gt; /dev/led3</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>$ dmesg</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>[ 1908.444587] combi_class led3: Open GPIO device [major: 239, minor: 8].</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>$ exec 9&gt;&amp;-</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>$ dmesg</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>[ 1908.444587] combi_class led3: Open GPIO device [major: 239, minor: 8].</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>[ 1912.854910] combi_class led3: Close GPIO device [major: 239, minor: 8].</span></code></pre></div>
+<p>Finally, the <code>combi_driver</code> can be unloaded with
+<code>rmmod</code>.</p>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>$ rmmod combi_driver</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>$ dmesg</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>[  517.657861] The combi_drv module has been removed from the kernel.</span></code></pre></div>
+<h1 data-number="5" id="testing-the-driver"><span
+class="header-section-number">5</span> Testing the driver</h1>
+<p>After the driver is loaded, LED3 can be turned on and off by echoing
+<code>1</code> and <code>0</code> to <code>/dev/led3</code>.</p>
+<!-- Conversion to gif using
+ffmpeg -i input.mp4 -vf scale=600:360,fps=8 output.gif -->
+<p><img src="images/output_led3.gif" id="fig:output_led3"
+style="width:70.0%" /></p>
+<p>The push button can be tested by running <code>cat /dev/sw2</code>
+and pressing SW2. Normally, when <code>/dev/sw2</code> is read using
+<code>cat</code>, a sequence of zeros and ones will be printed
+continuously to the console. The bash command below samples the sequence
+of zeros and ones, and prints the sampled value on a single line.</p>
+<pre><code>cat /dev/sw2 | tr -d &#39;\n&#39; | while read -n 1 X; do printf &quot;\r$X&quot;; read -n 100; done</code></pre>
+<p><img src="images/output_sw2.gif" id="fig:output_sw2"
+style="width:70.0%" /></p>
+<h1 data-number="6" id="closing-thoughts"><span
+class="header-section-number">6</span> Closing Thoughts</h1>
+<p>We have written a device driver that is able to handle two separate
+devices, a push button and an LED . A caveat of our driver is that, when
+reading from either the LED or the push button, both devices are polled
+such that zeros and ones read from the device’s GPIO line rapidly fill
+up the screen In the next project we will see how to make use of
+interrupts such that our driver will be notified when changes occur on
+the GPIO lines, e.g. when the GPIO signal associated with SW2 changes
+from 0 to 1, meaning that the button has been pressed.</p>
+</body>
+</html>
