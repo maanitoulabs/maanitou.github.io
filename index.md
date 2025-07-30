@@ -1,3 +1,7 @@
+---
+title: "Device driver development on the RPi"
+---
+
 [1 Getting started with cross-compilation](01_Getting_Started_with_Linux_Development/report/solution01.html)
 
 [2 The Linux kernel interface](02_Kernel_Interface/report/solution02.html)
